@@ -128,7 +128,52 @@
       ]
     },
     {
-      "name": "4. Accepter une réservation",
+      "name": "4. Définir le stock d'une pharmacie",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/pharmacies/{{phCentre}}/stocks/{{medSpasfon}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "pharmacies",
+            "{{phCentre}}",
+            "stocks",
+            "{{medSpasfon}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantite\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"10 disponibles\", () => pm.expect(pm.response.json().quantiteDisponible).to.eql(10));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Accepter une réservation",
       "request": {
         "method": "POST",
         "header": [
@@ -163,7 +208,42 @@
       ]
     },
     {
-      "name": "5. Demander une réservation",
+      "name": "6. Accepter une 2e fois (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations/{{r1}}/accepter",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations",
+            "{{r1}}",
+            "accepter"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"Erreur OperationDejaEffectueeError\", () => pm.expect(pm.response.json().erreur.type).to.eql(\"OperationDejaEffectueeError\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Demander une réservation",
       "request": {
         "method": "POST",
         "header": [
@@ -206,7 +286,49 @@
       ]
     },
     {
-      "name": "6. Stock insuffisant (409)",
+      "name": "8. Demande invalide : quantité 0 (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"utilisateurId\": \"zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"medicamentId\": \"{{medIbuprofene}}\",\n  \"quantite\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+              "pm.test(\"Erreur DemandeInvalideError\", () => pm.expect(pm.response.json().erreur.type).to.eql(\"DemandeInvalideError\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Stock insuffisant (409)",
       "request": {
         "method": "POST",
         "header": [
@@ -248,7 +370,42 @@
       ]
     },
     {
-      "name": "7. Réservation expirée (410)",
+      "name": "10. Retirer une réservation refusée (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations/{{r5}}/retirer",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations",
+            "{{r5}}",
+            "retirer"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"Erreur TransitionInterditeError\", () => pm.expect(pm.response.json().erreur.type).to.eql(\"TransitionInterditeError\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Réservation expirée (410)",
       "request": {
         "method": "POST",
         "header": [
@@ -298,7 +455,7 @@
       ]
     },
     {
-      "name": "8. Réservation inconnue (404)",
+      "name": "12. Réservation inconnue (404)",
       "request": {
         "method": "GET",
         "header": [
