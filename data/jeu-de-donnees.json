@@ -1,0 +1,62 @@
+{
+  "pharmacies": [
+    { "id": "ph-centre",   "nom": "Pharmacie du Centre",       "adresse": "12 rue de la République, 69002 Lyon" },
+    { "id": "ph-gare",     "nom": "Pharmacie de la Gare",      "adresse": "3 place Charles Béraudier, 69003 Lyon" },
+    { "id": "ph-tetedor",  "nom": "Pharmacie Tête d'Or",       "adresse": "45 avenue de Saxe, 69006 Lyon" },
+    { "id": "ph-vieuxlyon","nom": "Pharmacie du Vieux Lyon",   "adresse": "8 rue Saint-Jean, 69005 Lyon" },
+    { "id": "ph-croix",    "nom": "Pharmacie de la Croix-Rousse", "adresse": "27 Grande Rue de la Croix-Rousse, 69004 Lyon" },
+    { "id": "ph-horsreseau","nom": "Pharmacie Hors Réseau",    "adresse": "1 rue Inconnue, 69007 Lyon", "partenaire": false }
+  ],
+  "medicaments": [
+    { "id": "med-doliprane500",  "nom": "Doliprane",   "dosage": "500 mg",  "forme": "comprimé" },
+    { "id": "med-doliprane1000", "nom": "Doliprane",   "dosage": "1000 mg", "forme": "comprimé" },
+    { "id": "med-efferalgan",    "nom": "Efferalgan",  "dosage": "500 mg",  "forme": "comprimé effervescent" },
+    { "id": "med-ibuprofene",    "nom": "Ibuprofène",  "dosage": "400 mg",  "forme": "comprimé" },
+    { "id": "med-spasfon",       "nom": "Spasfon",     "dosage": "80 mg",   "forme": "comprimé" },
+    { "id": "med-smecta",        "nom": "Smecta",      "dosage": "3 g",     "forme": "sachet" },
+    { "id": "med-imodium",       "nom": "Imodium",     "dosage": "2 mg",    "forme": "gélule" },
+    { "id": "med-gaviscon",      "nom": "Gaviscon",    "dosage": "250 ml",  "forme": "suspension buvable" },
+    { "id": "med-humex",         "nom": "Humex Rhume", "dosage": "",        "forme": "comprimé" },
+    { "id": "med-biafine",       "nom": "Biafine",     "dosage": "186 g",   "forme": "émulsion cutanée" },
+    { "id": "med-ventoline",     "nom": "Ventoline",   "dosage": "100 µg",  "forme": "aérosol", "surOrdonnance": true },
+    { "id": "med-amoxicilline",  "nom": "Amoxicilline","dosage": "500 mg",  "forme": "gélule", "surOrdonnance": true },
+    { "id": "med-levothyrox",    "nom": "Levothyrox",  "dosage": "50 µg",   "forme": "comprimé", "surOrdonnance": true }
+  ],
+  "stocks": [
+    { "pharmacie": "ph-centre", "medicament": "med-doliprane500",  "quantite": 40 },
+    { "pharmacie": "ph-centre", "medicament": "med-doliprane1000", "quantite": 25 },
+    { "pharmacie": "ph-centre", "medicament": "med-ibuprofene",    "quantite": 18 },
+    { "pharmacie": "ph-centre", "medicament": "med-spasfon",       "quantite": 1 },
+    { "pharmacie": "ph-centre", "medicament": "med-smecta",        "quantite": 12 },
+    { "pharmacie": "ph-centre", "medicament": "med-ventoline",     "quantite": 4 },
+    { "pharmacie": "ph-gare",   "medicament": "med-doliprane500",  "quantite": 6 },
+    { "pharmacie": "ph-gare",   "medicament": "med-efferalgan",    "quantite": 15 },
+    { "pharmacie": "ph-gare",   "medicament": "med-imodium",       "quantite": 9 },
+    { "pharmacie": "ph-gare",   "medicament": "med-humex",         "quantite": 0 },
+    { "pharmacie": "ph-gare",   "medicament": "med-gaviscon",      "quantite": 7 },
+    { "pharmacie": "ph-tetedor","medicament": "med-doliprane500",  "quantite": 0 },
+    { "pharmacie": "ph-tetedor","medicament": "med-ibuprofene",    "quantite": 22 },
+    { "pharmacie": "ph-tetedor","medicament": "med-biafine",       "quantite": 5 },
+    { "pharmacie": "ph-tetedor","medicament": "med-amoxicilline",  "quantite": 10 },
+    { "pharmacie": "ph-tetedor","medicament": "med-levothyrox",    "quantite": 8 },
+    { "pharmacie": "ph-vieuxlyon","medicament": "med-spasfon",     "quantite": 14 },
+    { "pharmacie": "ph-vieuxlyon","medicament": "med-efferalgan",  "quantite": 3 },
+    { "pharmacie": "ph-vieuxlyon","medicament": "med-humex",       "quantite": 11 },
+    { "pharmacie": "ph-croix",  "medicament": "med-doliprane1000", "quantite": 30 },
+    { "pharmacie": "ph-croix",  "medicament": "med-smecta",        "quantite": 2 },
+    { "pharmacie": "ph-croix",  "medicament": "med-ventoline",     "quantite": 6 },
+    { "pharmacie": "ph-croix",  "medicament": "med-gaviscon",      "quantite": 13 }
+  ],
+  "reservations": [
+    { "cle": "r1", "utilisateur": "alice",  "pharmacie": "ph-centre",   "medicament": "med-doliprane500",  "quantite": 2, "etat": "en_attente" },
+    { "cle": "r2", "utilisateur": "bruno",  "pharmacie": "ph-centre",   "medicament": "med-ibuprofene",    "quantite": 1, "etat": "acceptee" },
+    { "cle": "r3", "utilisateur": "chloe",  "pharmacie": "ph-gare",     "medicament": "med-efferalgan",    "quantite": 2, "etat": "retiree" },
+    { "cle": "r4", "utilisateur": "david",  "pharmacie": "ph-gare",     "medicament": "med-doliprane500",  "quantite": 6, "etat": "acceptee" },
+    { "cle": "r5", "utilisateur": "emma",   "pharmacie": "ph-gare",     "medicament": "med-imodium",       "quantite": 1, "etat": "refusee", "motif": "Contre-indication à vérifier avec le pharmacien" },
+    { "cle": "r6", "utilisateur": "farid",  "pharmacie": "ph-croix",    "medicament": "med-smecta",        "quantite": 2, "etat": "acceptee" },
+    { "cle": "r7", "utilisateur": "alice",  "pharmacie": "ph-vieuxlyon","medicament": "med-spasfon",       "quantite": 1, "etat": "annulee" },
+    { "cle": "r8", "utilisateur": "gabrielle","pharmacie": "ph-tetedor","medicament": "med-amoxicilline",  "quantite": 1, "etat": "en_attente" },
+    { "cle": "r9", "utilisateur": "hugo",   "pharmacie": "ph-croix",    "medicament": "med-ventoline",     "quantite": 1, "etat": "acceptee" },
+    { "cle": "r10","utilisateur": "chloe",  "pharmacie": "ph-centre",   "medicament": "med-spasfon",       "quantite": 1, "etat": "en_attente" }
+  ]
+}

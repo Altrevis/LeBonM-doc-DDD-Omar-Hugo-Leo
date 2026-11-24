@@ -1,0 +1,10 @@
+{
+  "name": "lebonmedoc",
+  "version": "1.0.0",
+  "description": "Réservation de médicaments en pharmacies partenaires (TP MVC)",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node api.js"
+  }
+}

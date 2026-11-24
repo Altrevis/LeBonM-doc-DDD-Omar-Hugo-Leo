@@ -1,0 +1,417 @@
+{
+  "info": {
+    "name": "LeBonMédoc - Tests API",
+    "description": "Lancer l'API (npm start), puis exécuter la collection dans l'ordre : la requête 1 charge le jeu de données.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Charger le jeu de données",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/seed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "seed"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test(\"6 pharmacies, 13 médicaments, 10 réservations\", () => {",
+              "  pm.expect(b.pharmacies).to.eql(6); pm.expect(b.medicaments).to.eql(13); pm.expect(b.reservations).to.eql(10); });",
+              "Object.entries(b.idsReservations).forEach(([k, id]) => pm.collectionVariables.set(k, id));",
+              "pm.test(\"identifiants r1..r10 enregistrés\", () => pm.expect(pm.collectionVariables.get(\"r10\")).to.be.a(\"string\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Rechercher un médicament",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/disponibilites?nom=doliprane",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "disponibilites"
+          ],
+          "query": [
+            {
+              "key": "nom",
+              "value": "doliprane"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"3 résultat(s)\", () => pm.expect(pm.response.json().length).to.eql(3));",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.medicament.id === \"med-doliprane500\");",
+              "pm.test(\"ph-centre / med-doliprane500 : 40 disponible(s)\", () => pm.expect(d && d.quantiteDisponible).to.eql(40)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.medicament.id === \"med-doliprane1000\");",
+              "pm.test(\"ph-centre / med-doliprane1000 : 25 disponible(s)\", () => pm.expect(d && d.quantiteDisponible).to.eql(25)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-croix\" && x.medicament.id === \"med-doliprane1000\");",
+              "pm.test(\"ph-croix / med-doliprane1000 : 30 disponible(s)\", () => pm.expect(d && d.quantiteDisponible).to.eql(30)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-gare\" && x.medicament.id === \"med-doliprane500\");",
+              "pm.test(\"ph-gare / med-doliprane500 : absent des résultats\", () => pm.expect(d && d.quantiteDisponible).to.eql(undefined)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-tetedor\" && x.medicament.id === \"med-doliprane500\");",
+              "pm.test(\"ph-tetedor / med-doliprane500 : absent des résultats\", () => pm.expect(d && d.quantiteDisponible).to.eql(undefined)); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Consulter une réservation",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations/{{r3}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations",
+            "{{r3}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"statut = retiree\", () => pm.expect(pm.response.json().statut).to.eql(\"retiree\"));",
+              "pm.test(\"historique complet\", () => pm.expect(pm.response.json().historique.map(h => h.vers)).to.eql([\"en_attente\",\"acceptee\",\"retiree\"]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Accepter une réservation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations/{{r1}}/accepter",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations",
+            "{{r1}}",
+            "accepter"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"statut = acceptee\", () => pm.expect(pm.response.json().statut).to.eql(\"acceptee\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Demander une réservation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"utilisateurId\": \"zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"medicamentId\": \"{{medSpasfon}}\",\n  \"quantite\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"statut = en_attente\", () => pm.expect(pm.response.json().statut).to.eql(\"en_attente\"));",
+              "pm.collectionVariables.set(\"rZoe\", pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Stock insuffisant (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"utilisateurId\": \"zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"medicamentId\": \"{{medIbuprofene}}\",\n  \"quantite\": 19\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));",
+              "pm.test(\"Erreur StockInsuffisantError\", () => pm.expect(pm.response.json().erreur.type).to.eql(\"StockInsuffisantError\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Réservation expirée (410)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations/{{r6}}/retirer",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations",
+            "{{r6}}",
+            "retirer"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Simule 25 h de plus : la réservation r6 (acceptée) est alors périmée.",
+              "pm.sendRequest({",
+              "  url: pm.variables.replaceIn(\"{{baseUrl}}/admin/horloge\"),",
+              "  method: \"POST\",",
+              "  header: { \"Content-Type\": \"application/json\" },",
+              "  body: { mode: \"raw\", raw: JSON.stringify({ avancerHeures: 25 }) }",
+              "}, (err) => { if (err) throw err; });"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 410\", () => pm.response.to.have.status(410));",
+              "pm.test(\"Erreur ReservationExpireeError\", () => pm.expect(pm.response.json().erreur.type).to.eql(\"ReservationExpireeError\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Réservation inconnue (404)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reservations/res-999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reservations",
+            "res-999"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Erreur EntiteIntrouvableError\", () => pm.expect(pm.response.json().erreur.type).to.eql(\"EntiteIntrouvableError\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "phCentre",
+      "value": "ph-centre"
+    },
+    {
+      "key": "phGare",
+      "value": "ph-gare"
+    },
+    {
+      "key": "phTetedor",
+      "value": "ph-tetedor"
+    },
+    {
+      "key": "phVieuxlyon",
+      "value": "ph-vieuxlyon"
+    },
+    {
+      "key": "phCroix",
+      "value": "ph-croix"
+    },
+    {
+      "key": "phHorsreseau",
+      "value": "ph-horsreseau"
+    },
+    {
+      "key": "medDoliprane500",
+      "value": "med-doliprane500"
+    },
+    {
+      "key": "medDoliprane1000",
+      "value": "med-doliprane1000"
+    },
+    {
+      "key": "medEfferalgan",
+      "value": "med-efferalgan"
+    },
+    {
+      "key": "medIbuprofene",
+      "value": "med-ibuprofene"
+    },
+    {
+      "key": "medSpasfon",
+      "value": "med-spasfon"
+    },
+    {
+      "key": "medSmecta",
+      "value": "med-smecta"
+    },
+    {
+      "key": "medImodium",
+      "value": "med-imodium"
+    },
+    {
+      "key": "medGaviscon",
+      "value": "med-gaviscon"
+    },
+    {
+      "key": "medHumex",
+      "value": "med-humex"
+    },
+    {
+      "key": "medBiafine",
+      "value": "med-biafine"
+    },
+    {
+      "key": "medVentoline",
+      "value": "med-ventoline"
+    },
+    {
+      "key": "medAmoxicilline",
+      "value": "med-amoxicilline"
+    },
+    {
+      "key": "medLevothyrox",
+      "value": "med-levothyrox"
+    }
+  ]
+}
