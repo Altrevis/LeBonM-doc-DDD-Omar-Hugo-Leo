@@ -46,7 +46,7 @@ test("seed loads users and presentations and preserves pharmacy stock links", as
     },
     {
       pharmacies: 6, medicaments: 12, presentations: 13,
-      utilisateurs: 14, reservations: 10, lignesReservation: 10,
+      utilisateurs: 15, reservations: 10, lignesReservation: 10,
     },
   );
 
@@ -83,6 +83,40 @@ test("users can be created and pharmacists must reference a real pharmacy", asyn
     },
   });
   assert.equal(unknownPharmacy.status, 404);
+
+  const adminRoleAssignment = await requete(baseUrl, "/utilisateurs", {
+    method: "POST",
+    body: {
+      nom: "Admin",
+      email: "admin2@example.test",
+      role: "admin",
+    },
+  });
+  assert.equal(adminRoleAssignment.status, 403);
+});
+
+test("only an administrator can create pharmacies", async () => {
+  const baseUrl = await demarrerApp();
+  await requete(baseUrl, "/admin/seed", { method: "POST" });
+
+  const missingAdmin = await requete(baseUrl, "/pharmacies", {
+    method: "POST",
+    body: { nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
+  });
+  assert.equal(missingAdmin.status, 400);
+
+  const clientRequest = await requete(baseUrl, "/pharmacies", {
+    method: "POST",
+    body: { adminId: "usr-alice", nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
+  });
+  assert.equal(clientRequest.status, 403);
+
+  const adminRequest = await requete(baseUrl, "/pharmacies", {
+    method: "POST",
+    body: { adminId: "usr-admin", nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
+  });
+  assert.equal(adminRequest.status, 201);
+  assert.equal(adminRequest.body.nom, "Nouvelle pharmacie");
 });
 
 test("stock and reservations use a presentation and enforce user roles", async () => {

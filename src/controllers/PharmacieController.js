@@ -1,19 +1,26 @@
-import { DemandeInvalideError } from "../errors.js";
+import { AccesInterditError, DemandeInvalideError } from "../errors.js";
+import { RoleEnum } from "../enums/RoleEnum.js";
 import { Pharmacie } from "../models/Pharmacie.js";
 import { Medicament } from "../models/Medicament.js";
 import { Presentation } from "../models/Presentation.js";
 import { exigerObjet } from "./entrees.js";
 
 export class PharmacieController {
-  constructor(pharmacies, medicaments, presentations, stockService) {
+  constructor(pharmacies, medicaments, presentations, stockService, utilisateurs) {
     this.pharmacies = pharmacies;
     this.medicaments = medicaments;
     this.presentations = presentations;
     this.stockService = stockService;
+    this.utilisateurs = utilisateurs;
   }
 
   creerPharmacie(corps) {
     const b = exigerObjet(corps);
+    if (!b.adminId) throw new DemandeInvalideError("Administrateur manquant.");
+    const admin = this.utilisateurs.trouver(b.adminId);
+    if (admin.role !== RoleEnum.ADMIN) {
+      throw new AccesInterditError("Seul un administrateur peut créer une pharmacie.");
+    }
     if (b.partenaire !== undefined && typeof b.partenaire !== "boolean") {
       throw new DemandeInvalideError("partenaire doit être un booléen.");
     }

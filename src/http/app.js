@@ -29,7 +29,8 @@ function creerEtat() {
   etat.reservationService = new ReservationService(
     reservations, lignesReservation, stocks, pharmacies, presentations, utilisateurs,
     () => new Date(Date.now() + etat.decalageMs));
-  etat.pharmacieCtrl = new PharmacieController(pharmacies, medicaments, presentations, etat.stockService);
+  etat.pharmacieCtrl = new PharmacieController(
+    pharmacies, medicaments, presentations, etat.stockService, utilisateurs);
   etat.reservationCtrl = new ReservationController(etat.reservationService);
   etat.utilisateurCtrl = new UtilisateurController(utilisateurs, pharmacies);
   return etat;

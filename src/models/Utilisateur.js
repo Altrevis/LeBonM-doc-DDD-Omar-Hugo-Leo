@@ -13,8 +13,8 @@ export class Utilisateur {
     if (role === RoleEnum.PHARMACIEN && (typeof pharmacieId !== "string" || !pharmacieId.trim())) {
       throw new DemandeInvalideError("Un pharmacien doit être associé à une pharmacie.");
     }
-    if (role === RoleEnum.CLIENT && pharmacieId !== null) {
-      throw new DemandeInvalideError("Un client ne peut pas être associé à une pharmacie.");
+    if (role !== RoleEnum.PHARMACIEN && pharmacieId !== null) {
+      throw new DemandeInvalideError("Seul un pharmacien peut être associé à une pharmacie.");
     }
 
     Object.assign(this, {

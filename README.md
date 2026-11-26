@@ -25,7 +25,7 @@ npm start    # API sur http://localhost:3000
 Importer `postman/LeBonMedoc.postman_collection.json` et lancer toute la collection (Collection Runner). La première requête appelle `POST /admin/seed`, qui charge `data/jeu-de-donnees.json`. La collection est rejouable. Définir la variable `baseUrl` à `http://localhost:3000`.
 
 Les routes `/admin/*` (reset, seed, horloge, expirer) servent uniquement aux tests.
-Les `clientId` et `pharmacienId` transmis aux routes servent à simuler l'acteur dans ce prototype ; ils ne remplacent pas une authentification.
+Les `clientId`, `pharmacienId` et `adminId` transmis aux routes servent à simuler l'acteur dans ce prototype ; ils ne remplacent pas une authentification. Le compte administrateur de démonstration (`usr-admin`) est chargé par le seed. La route publique de création d'utilisateur ne permet pas d'attribuer le rôle `admin`.
 À la création d'une réservation, le client sélectionne une pharmacie ; le système affecte un pharmacien de cette pharmacie. La pharmacie est ensuite déduite du pharmacien affecté et n'est pas stockée sur la réservation.
 La `forme` décrit chaque présentation, et non le médicament en général. Les lignes d'une réservation concernent toutes cette pharmacie ; une présentation ne peut apparaître qu'une fois par réservation, identifiée par le couple réservation-présentation. Le stock est compté en `uniteBase` (`comprime`, `gelule`, `sachet`, `ml`, `g`, `dose`). `disponible` est calculé à partir de `quantiteBase - quantiteReserveeBase`, pas stocké séparément. Une ligne peut demander `boite` ou `unite` : une boîte est convertie avec `contenanceBoite`, et la vente à l'unité exige `venteALunite: true`.
 Les contenances et prix absents du jeu de données restent à `null` ; aucune valeur commerciale n'est inventée.
@@ -33,8 +33,8 @@ Les contenances et prix absents du jeu de données restent à `null` ; aucune va
 ## Routes
 | Méthode | Route | Codes |
 |---|---|---|
-| POST | /utilisateurs `{nom, email, role, pharmacieId?}` | 201, 400, 404 |
-| POST | /pharmacies `{nom, adresse, partenaire?}` | 201, 400 |
+| POST | /utilisateurs `{nom, email, role, pharmacieId?}` | 201, 400, 403, 404 |
+| POST | /pharmacies `{adminId, nom, adresse, partenaire?}` | 201, 400, 403, 404 |
 | POST | /medicaments `{nom, description?, ordonnanceRequise?}` | 201, 400 |
 | POST | /medicaments/:id/presentations `{forme?, dosage?, uniteBase, contenanceBoite?, venteALunite, prix?}` | 201, 400, 404 |
 | PUT | /pharmacies/:id/stocks/:presentationId `{quantiteBase, pharmacienId}` | 200, 400, 403, 404 |

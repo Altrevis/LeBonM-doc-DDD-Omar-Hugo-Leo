@@ -50,7 +50,8 @@
     { "id": "usr-ph-gare", "nom": "Pharmacien Gare", "email": "gare@example.test", "role": "pharmacien", "pharmacieId": "ph-gare" },
     { "id": "usr-ph-tetedor", "nom": "Pharmacien Tête d'Or", "email": "tetedor@example.test", "role": "pharmacien", "pharmacieId": "ph-tetedor" },
     { "id": "usr-ph-vieuxlyon", "nom": "Pharmacien Vieux Lyon", "email": "vieuxlyon@example.test", "role": "pharmacien", "pharmacieId": "ph-vieuxlyon" },
-    { "id": "usr-ph-croix", "nom": "Pharmacien Croix-Rousse", "email": "croix@example.test", "role": "pharmacien", "pharmacieId": "ph-croix" }
+    { "id": "usr-ph-croix", "nom": "Pharmacien Croix-Rousse", "email": "croix@example.test", "role": "pharmacien", "pharmacieId": "ph-croix" },
+    { "id": "usr-admin", "nom": "Administrateur", "email": "admin@example.test", "role": "admin" }
   ],
   "stocks": [
     { "pharmacieId": "ph-centre", "presentationId": "pre-doliprane500", "quantiteBase": 40 },
