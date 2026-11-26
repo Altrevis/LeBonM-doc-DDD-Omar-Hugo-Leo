@@ -7,42 +7,42 @@ function verifierQuantitePositive(q) {
 }
 
 export class Stock {
-  constructor({ pharmacieId, medicamentId, quantiteTotale = 0, quantiteReservee = 0 }) {
-    if (!Number.isInteger(quantiteTotale) || quantiteTotale < 0 ||
-        !Number.isInteger(quantiteReservee) || quantiteReservee < 0 ||
-        quantiteReservee > quantiteTotale) {
+  constructor({ pharmacieId, presentationId, quantiteBase = 0, quantiteReserveeBase = 0 }) {
+    if (!Number.isInteger(quantiteBase) || quantiteBase < 0 ||
+        !Number.isInteger(quantiteReserveeBase) || quantiteReserveeBase < 0 ||
+        quantiteReserveeBase > quantiteBase) {
       throw new DemandeInvalideError("Stock incohérent : 0 <= réservé <= total requis.");
     }
-    Object.assign(this, { pharmacieId, medicamentId, quantiteTotale, quantiteReservee });
+    Object.assign(this, { pharmacieId, presentationId, quantiteBase, quantiteReserveeBase });
   }
 
-  get quantiteDisponible() {
-    return this.quantiteTotale - this.quantiteReservee;
+  get disponible() {
+    return this.quantiteBase - this.quantiteReserveeBase;
   }
 
   reserver(quantite) {
     verifierQuantitePositive(quantite);
-    if (quantite > this.quantiteDisponible) {
+    if (quantite > this.disponible) {
       throw new StockInsuffisantError(
-        `Stock insuffisant : ${quantite} demandé(s), ${this.quantiteDisponible} disponible(s).`);
+        `Stock insuffisant : ${quantite} demandé(s), ${this.disponible} disponible(s).`);
     }
-    this.quantiteReservee += quantite;
+    this.quantiteReserveeBase += quantite;
   }
 
   liberer(quantite) {
     verifierQuantitePositive(quantite);
-    if (quantite > this.quantiteReservee) {
+    if (quantite > this.quantiteReserveeBase) {
       throw new DemandeInvalideError("Impossible de libérer plus que la quantité réservée.");
     }
-    this.quantiteReservee -= quantite;
+    this.quantiteReserveeBase -= quantite;
   }
 
   retirer(quantite) {
     verifierQuantitePositive(quantite);
-    if (quantite > this.quantiteReservee) {
+    if (quantite > this.quantiteReserveeBase) {
       throw new DemandeInvalideError("Impossible de retirer plus que la quantité réservée.");
     }
-    this.quantiteReservee -= quantite;
-    this.quantiteTotale -= quantite;
+    this.quantiteReserveeBase -= quantite;
+    this.quantiteBase -= quantite;
   }
 }

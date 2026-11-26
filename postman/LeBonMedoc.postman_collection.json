@@ -34,8 +34,8 @@
             "exec": [
               "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
               "const b = pm.response.json();",
-              "pm.test(\"6 pharmacies, 13 médicaments, 10 réservations\", () => {",
-              "  pm.expect(b.pharmacies).to.eql(6); pm.expect(b.medicaments).to.eql(13); pm.expect(b.reservations).to.eql(10); });",
+              "pm.test(\"6 pharmacies, 12 médicaments, 13 présentations, 14 utilisateurs, 10 réservations et 10 lignes\", () => {",
+              "  pm.expect(b.pharmacies).to.eql(6); pm.expect(b.medicaments).to.eql(12); pm.expect(b.presentations).to.eql(13); pm.expect(b.utilisateurs).to.eql(14); pm.expect(b.reservations).to.eql(10); pm.expect(b.lignesReservation).to.eql(10); });",
               "Object.entries(b.idsReservations).forEach(([k, id]) => pm.collectionVariables.set(k, id));",
               "pm.test(\"identifiants r1..r10 enregistrés\", () => pm.expect(pm.collectionVariables.get(\"r10\")).to.be.a(\"string\"));"
             ]
@@ -77,16 +77,16 @@
             "exec": [
               "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
               "pm.test(\"3 résultat(s)\", () => pm.expect(pm.response.json().length).to.eql(3));",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.medicament.id === \"med-doliprane500\");",
-              "pm.test(\"ph-centre / med-doliprane500 : 40 disponible(s)\", () => pm.expect(d && d.quantiteDisponible).to.eql(40)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.medicament.id === \"med-doliprane1000\");",
-              "pm.test(\"ph-centre / med-doliprane1000 : 25 disponible(s)\", () => pm.expect(d && d.quantiteDisponible).to.eql(25)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-croix\" && x.medicament.id === \"med-doliprane1000\");",
-              "pm.test(\"ph-croix / med-doliprane1000 : 30 disponible(s)\", () => pm.expect(d && d.quantiteDisponible).to.eql(30)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-gare\" && x.medicament.id === \"med-doliprane500\");",
-              "pm.test(\"ph-gare / med-doliprane500 : absent des résultats\", () => pm.expect(d && d.quantiteDisponible).to.eql(undefined)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-tetedor\" && x.medicament.id === \"med-doliprane500\");",
-              "pm.test(\"ph-tetedor / med-doliprane500 : absent des résultats\", () => pm.expect(d && d.quantiteDisponible).to.eql(undefined)); }"
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.presentation.id === \"pre-doliprane500\");",
+              "pm.test(\"ph-centre / doliprane500 : 40 disponible(s)\", () => pm.expect(d && d.disponible).to.eql(40)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.presentation.id === \"pre-doliprane1000\");",
+              "pm.test(\"ph-centre / doliprane1000 : 25 disponible(s)\", () => pm.expect(d && d.disponible).to.eql(25)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-croix\" && x.presentation.id === \"pre-doliprane1000\");",
+              "pm.test(\"ph-croix / doliprane1000 : 30 disponible(s)\", () => pm.expect(d && d.disponible).to.eql(30)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-gare\" && x.presentation.id === \"pre-doliprane500\");",
+              "pm.test(\"ph-gare / doliprane500 : absent des résultats\", () => pm.expect(d && d.disponible).to.eql(undefined)); }",
+              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-tetedor\" && x.presentation.id === \"pre-doliprane500\");",
+              "pm.test(\"ph-tetedor / doliprane500 : absent des résultats\", () => pm.expect(d && d.disponible).to.eql(undefined)); }"
             ]
           }
         }
@@ -103,13 +103,19 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/reservations/{{r3}}",
+          "raw": "{{baseUrl}}/reservations/{{r3}}?clientId=usr-chloe",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "reservations",
             "{{r3}}"
+          ],
+          "query": [
+            {
+              "key": "clientId",
+              "value": "usr-chloe"
+            }
           ]
         }
       },
@@ -121,7 +127,7 @@
             "exec": [
               "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
               "pm.test(\"statut = retiree\", () => pm.expect(pm.response.json().statut).to.eql(\"retiree\"));",
-              "pm.test(\"historique complet\", () => pm.expect(pm.response.json().historique.map(h => h.vers)).to.eql([\"en_attente\",\"acceptee\",\"retiree\"]));"
+              "pm.test(\"ligne de réservation conservée\", () => pm.expect(pm.response.json().lignes[0].presentationId).to.eql(\"pre-efferalgan\"));"
             ]
           }
         }
@@ -138,7 +144,7 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/pharmacies/{{phCentre}}/stocks/{{medSpasfon}}",
+          "raw": "{{baseUrl}}/pharmacies/{{phCentre}}/stocks/{{preSpasfon}}",
           "host": [
             "{{baseUrl}}"
           ],
@@ -146,12 +152,12 @@
             "pharmacies",
             "{{phCentre}}",
             "stocks",
-            "{{medSpasfon}}"
+            "{{preSpasfon}}"
           ]
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"quantite\": 10\n}",
+          "raw": "{\n  \"quantiteBase\": 10,\n  \"pharmacienId\": \"usr-ph-centre\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -166,7 +172,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"10 disponibles\", () => pm.expect(pm.response.json().quantiteDisponible).to.eql(10));"
+              "pm.test(\"10 disponibles\", () => pm.expect(pm.response.json().disponible).to.eql(10));"
             ]
           }
         }
@@ -192,6 +198,11 @@
             "{{r1}}",
             "accepter"
           ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pharmacienId\": \"usr-ph-centre\"\n}",
+          "options": { "raw": { "language": "json" } }
         }
       },
       "event": [
@@ -227,6 +238,11 @@
             "{{r1}}",
             "accepter"
           ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pharmacienId\": \"usr-ph-centre\"\n}",
+          "options": { "raw": { "language": "json" } }
         }
       },
       "event": [
@@ -263,7 +279,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"utilisateurId\": \"zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"medicamentId\": \"{{medSpasfon}}\",\n  \"quantite\": 1\n}",
+          "raw": "{\n  \"clientId\": \"usr-zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"lignes\": [{ \"presentationId\": \"{{preSpasfon}}\", \"quantite\": 1, \"unite\": \"unite\" }]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -306,7 +322,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"utilisateurId\": \"zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"medicamentId\": \"{{medIbuprofene}}\",\n  \"quantite\": 0\n}",
+          "raw": "{\n  \"clientId\": \"usr-zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"lignes\": [{ \"presentationId\": \"{{preIbuprofene}}\", \"quantite\": 0, \"unite\": \"unite\" }]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -348,7 +364,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"utilisateurId\": \"zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"medicamentId\": \"{{medIbuprofene}}\",\n  \"quantite\": 19\n}",
+          "raw": "{\n  \"clientId\": \"usr-zoe\",\n  \"pharmacieId\": \"{{phCentre}}\",\n  \"lignes\": [{ \"presentationId\": \"{{preIbuprofene}}\", \"quantite\": 19, \"unite\": \"unite\" }]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -389,6 +405,11 @@
             "{{r5}}",
             "retirer"
           ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pharmacienId\": \"usr-ph-gare\"\n}",
+          "options": { "raw": { "language": "json" } }
         }
       },
       "event": [
@@ -424,6 +445,11 @@
             "{{r6}}",
             "retirer"
           ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pharmacienId\": \"usr-ph-croix\"\n}",
+          "options": { "raw": { "language": "json" } }
         }
       },
       "event": [
@@ -519,56 +545,56 @@
       "value": "ph-horsreseau"
     },
     {
-      "key": "medDoliprane500",
-      "value": "med-doliprane500"
+      "key": "preDoliprane500",
+      "value": "pre-doliprane500"
     },
     {
-      "key": "medDoliprane1000",
-      "value": "med-doliprane1000"
+      "key": "preDoliprane1000",
+      "value": "pre-doliprane1000"
     },
     {
-      "key": "medEfferalgan",
-      "value": "med-efferalgan"
+      "key": "preEfferalgan",
+      "value": "pre-efferalgan"
     },
     {
-      "key": "medIbuprofene",
-      "value": "med-ibuprofene"
+      "key": "preIbuprofene",
+      "value": "pre-ibuprofene"
     },
     {
-      "key": "medSpasfon",
-      "value": "med-spasfon"
+      "key": "preSpasfon",
+      "value": "pre-spasfon"
     },
     {
-      "key": "medSmecta",
-      "value": "med-smecta"
+      "key": "preSmecta",
+      "value": "pre-smecta"
     },
     {
-      "key": "medImodium",
-      "value": "med-imodium"
+      "key": "preImodium",
+      "value": "pre-imodium"
     },
     {
-      "key": "medGaviscon",
-      "value": "med-gaviscon"
+      "key": "preGaviscon",
+      "value": "pre-gaviscon"
     },
     {
-      "key": "medHumex",
-      "value": "med-humex"
+      "key": "preHumex",
+      "value": "pre-humex"
     },
     {
-      "key": "medBiafine",
-      "value": "med-biafine"
+      "key": "preBiafine",
+      "value": "pre-biafine"
     },
     {
-      "key": "medVentoline",
-      "value": "med-ventoline"
+      "key": "preVentoline",
+      "value": "pre-ventoline"
     },
     {
-      "key": "medAmoxicilline",
-      "value": "med-amoxicilline"
+      "key": "preAmoxicilline",
+      "value": "pre-amoxicilline"
     },
     {
-      "key": "medLevothyrox",
-      "value": "med-levothyrox"
+      "key": "preLevothyrox",
+      "value": "pre-levothyrox"
     }
   ]
 }

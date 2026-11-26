@@ -1,22 +1,21 @@
 export class StockRepository {
   #items = new Map();
 
-  #cle(pharmacieId, medicamentId) {
-    return `${pharmacieId}::${medicamentId}`;
+  #cle(pharmacieId, presentationId) {
+    return `${pharmacieId}::${presentationId}`;
   }
 
   sauvegarder(stock) {
-    this.#items.set(this.#cle(stock.pharmacieId, stock.medicamentId), stock);
+    this.#items.set(this.#cle(stock.pharmacieId, stock.presentationId), stock);
     return stock;
   }
 
-  // Retourne undefined si aucun stock n'est référencé pour ce couple.
-  trouver(pharmacieId, medicamentId) {
-    return this.#items.get(this.#cle(pharmacieId, medicamentId));
+  trouver(pharmacieId, presentationId) {
+    return this.#items.get(this.#cle(pharmacieId, presentationId));
   }
 
-  listerParMedicament(medicamentId) {
-    return [...this.#items.values()].filter((s) => s.medicamentId === medicamentId);
+  listerParPresentation(presentationId) {
+    return [...this.#items.values()].filter((s) => s.presentationId === presentationId);
   }
 
   listerParPharmacie(pharmacieId) {

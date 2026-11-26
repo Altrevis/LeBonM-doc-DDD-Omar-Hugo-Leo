@@ -2,11 +2,16 @@ import { OperationDejaEffectueeError, TransitionInterditeError } from "../errors
 import { StatutReservation, TRANSITIONS_AUTORISEES, STATUTS_ACTIFS } from "./StatutReservation.js";
 
 export class Reservation {
-  constructor({ id, utilisateurId, medicamentId, quantite, creeLe, expireLe = null }) {
-    Object.assign(this, { id, utilisateurId, medicamentId, quantite, creeLe, expireLe });
+  constructor({ id, clientId, pharmacienId, creeLe, expireLe = null }) {
+    Object.assign(this, {
+      id,
+      clientId,
+      pharmacienId,
+      creeLe,
+      expireLe,
+      motifRefus: null,
+    });
     this.statut = StatutReservation.EN_ATTENTE;
-    this.motif = "";
-    this.historique = [{ de: null, vers: this.statut, le: creeLe }];
   }
 
   get estActive() {
@@ -30,7 +35,6 @@ export class Reservation {
 
   changerStatut(nouveauStatut, maintenant) {
     this.verifierTransitionDeStatut(nouveauStatut);
-    this.historique.push({ de: this.statut, vers: nouveauStatut, le: maintenant });
     this.statut = nouveauStatut;
   }
 }

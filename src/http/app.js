@@ -1,28 +1,37 @@
 import http from "node:http";
 import { Repository } from "../repositories/Repository.js";
 import { StockRepository } from "../repositories/StockRepository.js";
+import { LigneReservationRepository } from "../repositories/LigneReservationRepository.js";
 import { StockService } from "../services/StockService.js";
 import { ReservationService } from "../services/ReservationService.js";
 import { PharmacieController } from "../controllers/PharmacieController.js";
 import { ReservationController } from "../controllers/ReservationController.js";
+import { UtilisateurController } from "../controllers/UtilisateurController.js";
 import { exigerObjet } from "../controllers/entrees.js";
 import { chargerDonnees } from "../data/chargerDonnees.js";
 import { jeuDeDonnees } from "../data/jeuDeDonnees.js";
 import { DemandeInvalideError } from "../errors.js";
-import { envoyer, reponseErreur, vueErreur, vueStock } from "../views/json.js";
+import { envoyer, reponseErreur, vueErreur, vueStock, vueUtilisateur } from "../views/json.js";
 
 function creerEtat() {
   const pharmacies = new Repository("Pharmacie", "ph-");
   const medicaments = new Repository("Médicament", "med-");
+  const presentations = new Repository("Présentation", "pre-");
+  const utilisateurs = new Repository("Utilisateur", "usr-");
   const stocks = new StockRepository();
   const reservations = new Repository("Réservation", "res-");
-  const etat = { decalageMs: 0, pharmacies, medicaments, stocks, reservations };
-  etat.stockService = new StockService(stocks, medicaments, pharmacies);
+  const lignesReservation = new LigneReservationRepository();
+  const etat = {
+    decalageMs: 0, pharmacies, medicaments, presentations, utilisateurs, stocks, reservations, lignesReservation,
+  };
+  etat.stockService = new StockService(stocks, presentations, medicaments, pharmacies, utilisateurs);
   // Horloge décalable (/admin/horloge) pour tester l'expiration depuis Postman.
-  etat.reservationService = new ReservationService(reservations, stocks, pharmacies,
+  etat.reservationService = new ReservationService(
+    reservations, lignesReservation, stocks, pharmacies, presentations, utilisateurs,
     () => new Date(Date.now() + etat.decalageMs));
-  etat.pharmacieCtrl = new PharmacieController(pharmacies, medicaments, etat.stockService);
+  etat.pharmacieCtrl = new PharmacieController(pharmacies, medicaments, presentations, etat.stockService);
   etat.reservationCtrl = new ReservationController(etat.reservationService);
+  etat.utilisateurCtrl = new UtilisateurController(utilisateurs, pharmacies);
   return etat;
 }
 
@@ -32,19 +41,29 @@ const ROUTES = [
   //Pharmacies, médicaments, stocks, recherche
   ["POST", /^\/pharmacies$/, (c) => ({ status: 201, body: c.e.pharmacieCtrl.creerPharmacie(c.body) })],
   ["POST", /^\/medicaments$/, (c) => ({ status: 201, body: c.e.pharmacieCtrl.creerMedicament(c.body) })],
+  ["POST", /^\/medicaments\/([^/]+)\/presentations$/, (c) => ({
+    status: 201, body: c.e.pharmacieCtrl.creerPresentation(c.p[0], c.body) })],
+  ["POST", /^\/utilisateurs$/, (c) => ({
+    status: 201, body: vueUtilisateur(c.e.utilisateurCtrl.creer(c.body)) })],
   ["PUT", /^\/pharmacies\/([^/]+)\/stocks\/([^/]+)$/, (c) => ({
     status: 200, body: vueStock(c.e.pharmacieCtrl.definirStock(c.p[0], c.p[1], c.body)) })],
   ["GET", /^\/disponibilites$/, (c) => ({ status: 200, body: c.e.pharmacieCtrl.rechercher(c.query.get("nom")) })],
 
   //Réservations
   ["POST", /^\/reservations$/, (c) => ({ status: 201, body: c.e.reservationCtrl.demander(c.body) })],
-  ["GET", /^\/reservations\/([^/]+)$/, (c) => ({ status: 200, body: c.e.reservationCtrl.consulter(c.p[0]) })],
-  ["POST", /^\/reservations\/([^/]+)\/accepter$/, (c) => ({ status: 200, body: c.e.reservationCtrl.accepter(c.p[0]) })],
-  ["POST", /^\/reservations\/([^/]+)\/refuser$/, (c) => ({ status: 200, body: c.e.reservationCtrl.refuser(c.p[0], c.body) })],
-  ["POST", /^\/reservations\/([^/]+)\/annuler$/, (c) => ({ status: 200, body: c.e.reservationCtrl.annuler(c.p[0]) })],
-  ["POST", /^\/reservations\/([^/]+)\/retirer$/, (c) => ({ status: 200, body: c.e.reservationCtrl.retirer(c.p[0]) })],
+  ["GET", /^\/reservations\/([^/]+)$/, (c) => ({
+    status: 200, body: c.e.reservationCtrl.consulter(c.p[0], c.query.get("clientId")) })],
+  ["POST", /^\/reservations\/([^/]+)\/accepter$/, (c) => ({
+    status: 200, body: c.e.reservationCtrl.accepter(c.p[0], c.body) })],
+  ["POST", /^\/reservations\/([^/]+)\/refuser$/, (c) => ({
+    status: 200, body: c.e.reservationCtrl.refuser(c.p[0], c.body) })],
+  ["POST", /^\/reservations\/([^/]+)\/annuler$/, (c) => ({
+    status: 200, body: c.e.reservationCtrl.annuler(c.p[0], c.body) })],
+  ["POST", /^\/reservations\/([^/]+)\/retirer$/, (c) => ({
+    status: 200, body: c.e.reservationCtrl.retirer(c.p[0], c.body) })],
   ["GET", /^\/pharmacies\/([^/]+)\/reservations$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.listerParPharmacie(c.p[0], c.query.get("statut")) })],
+    status: 200, body: c.e.reservationCtrl.listerParPharmacie(
+      c.p[0], c.query.get("pharmacienId"), c.query.get("statut")) })],
 
   //Outils de test (à retirer en production)
   ["POST", /^\/admin\/reset$/, (c) => { c.app.etat = creerEtat(); return { status: 200, body: { reinitialise: true } }; }],
@@ -55,7 +74,10 @@ const ROUTES = [
     return { status: 200, body: {
       pharmacies: e.pharmacies.lister().length,
       medicaments: e.medicaments.lister().length,
+      presentations: e.presentations.lister().length,
+      utilisateurs: e.utilisateurs.lister().length,
       reservations: Object.keys(creees).length,
+      lignesReservation: e.lignesReservation.lister().length,
       idsReservations: Object.fromEntries(Object.entries(creees).map(([k, r]) => [k, r.id])),
     } };
   }],

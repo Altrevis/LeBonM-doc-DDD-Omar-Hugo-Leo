@@ -1,28 +1,37 @@
 import { DemandeInvalideError } from "../errors.js";
 import { StatutReservation } from "../models/StatutReservation.js";
 import { exigerObjet } from "./entrees.js";
+import { vueReservation } from "../views/json.js";
 
 export class ReservationController {
   constructor(reservationService) {
     this.service = reservationService;
   }
 
-  demander(corps) {
-    const b = exigerObjet(corps);
-    return this.service.demander(b.utilisateurId, b.pharmacieId, b.medicamentId, b.quantite);
+  #vue(reservation) {
+    return vueReservation(reservation, this.service.lignesPour(reservation.id));
   }
 
-  consulter(id) { return this.service.consulter(id); }
-  accepter(id) { return this.service.accepter(id); }
-  refuser(id, corps) { return this.service.refuser(id, corps?.motif ?? ""); }
-  annuler(id) { return this.service.annuler(id); }
-  retirer(id) { return this.service.marquerRetiree(id); }
+  demander(corps) {
+    const b = exigerObjet(corps);
+    return this.#vue(this.service.demander(b.clientId, b.pharmacieId, b.lignes));
+  }
+
+  consulter(id, utilisateurId) { return this.#vue(this.service.consulter(id, utilisateurId)); }
+  accepter(id, corps) { return this.#vue(this.service.accepter(id, exigerObjet(corps).pharmacienId)); }
+  refuser(id, corps) {
+    const b = exigerObjet(corps);
+    return this.#vue(this.service.refuser(id, b.pharmacienId, b.motifRefus ?? ""));
+  }
+  annuler(id, corps) { return this.#vue(this.service.annuler(id, exigerObjet(corps).clientId)); }
+  retirer(id, corps) { return this.#vue(this.service.marquerRetiree(id, exigerObjet(corps).pharmacienId)); }
   expirer() { return this.service.expirerLesReservations(); }
 
-  listerParPharmacie(pharmacieId, statut) {
+  listerParPharmacie(pharmacieId, pharmacienId, statut) {
     if (statut !== null && !Object.values(StatutReservation).includes(statut)) {
       throw new DemandeInvalideError(`Statut inconnu : ${statut}.`);
     }
-    return this.service.listerPourPharmacie(pharmacieId, statut);
+    return this.service.listerPourPharmacie(pharmacieId, pharmacienId, statut)
+      .map((reservation) => this.#vue(reservation));
   }
 }
