@@ -5,6 +5,7 @@ export class LeBonMedocError extends Error {
   }
 }
 export class DemandeInvalideError extends LeBonMedocError {} 
+export class AccesInterditError extends LeBonMedocError {}
 export class StockInsuffisantError extends LeBonMedocError {}
 export class ReservationExpireeError extends LeBonMedocError {}
 export class TransitionInterditeError extends LeBonMedocError {} 
