@@ -2,8 +2,8 @@ import { OperationDejaEffectueeError, TransitionInterditeError } from "../errors
 import { StatutReservation, TRANSITIONS_AUTORISEES, STATUTS_ACTIFS } from "./StatutReservation.js";
 
 export class Reservation {
-  constructor({ id, utilisateurId, pharmacieId, medicamentId, quantite, creeLe, expireLe = null }) {
-    Object.assign(this, { id, utilisateurId, pharmacieId, medicamentId, quantite, creeLe, expireLe });
+  constructor({ id, utilisateurId, medicamentId, quantite, creeLe, expireLe = null }) {
+    Object.assign(this, { id, utilisateurId, medicamentId, quantite, creeLe, expireLe });
     this.statut = StatutReservation.EN_ATTENTE;
     this.motif = "";
     this.historique = [{ de: null, vers: this.statut, le: creeLe }];
