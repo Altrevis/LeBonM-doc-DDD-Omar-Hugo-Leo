@@ -4,16 +4,14 @@ import {
 } from "../errors.js";
 import { RoleEnum } from "../enums/RoleEnum.js";
 import { UniteDemandee } from "../enums/UniteDemandee.js";
-import { LigneReservation } from "../models/LigneReservation.js";
 import { Reservation } from "../models/Reservation.js";
 import { StatutReservation } from "../models/StatutReservation.js";
 
 export class ReservationService {
   static DELAI_RETRAIT_HEURES = 24;
 
-  constructor(reservations, lignes, stocks, pharmacies, presentations, utilisateurs, horloge = () => new Date()) {
+  constructor(reservations, stocks, pharmacies, presentations, utilisateurs, horloge = () => new Date()) {
     this.reservations = reservations;
-    this.lignes = lignes;
     this.stocks = stocks;
     this.pharmacies = pharmacies;
     this.presentations = presentations;
@@ -42,16 +40,12 @@ export class ReservationService {
     return this.utilisateurs.trouver(reservation.pharmacienId).pharmacieId;
   }
 
-  #lignesDe(reservation) {
-    return this.lignes.lister().filter((ligne) => ligne.reservationId === reservation.id);
-  }
-
   #stockDe(reservation, ligne) {
     return this.stocks.trouver(this.#pharmacieIdDe(reservation), ligne.presentationId);
   }
 
   #stocksDesLignes(reservation) {
-    return this.#lignesDe(reservation).map((ligne) => ({
+    return reservation.lignes.map((ligne) => ({
       ligne,
       stock: this.#stockDe(reservation, ligne),
     }));
@@ -99,6 +93,17 @@ export class ReservationService {
     return pharmacien;
   }
 
+  #exigerAucunDoublonActif(nouvelle) {
+    const doublon = this.reservations.lister().some((reservation) =>
+      reservation.estActive &&
+      reservation.clientId === nouvelle.clientId &&
+      reservation.pharmacienId === nouvelle.pharmacienId &&
+      nouvelle.lignes.some((ligne) => reservation.contientPresentation(ligne.presentationId)));
+    if (doublon) {
+      throw new OperationDejaEffectueeError("Une réservation active existe déjà pour une présentation demandée.");
+    }
+  }
+
   #exigerNonExpiree(reservation, maintenant) {
     if (reservation.estExpiree(maintenant)) {
       this.#expirer(reservation, maintenant);
@@ -108,7 +113,7 @@ export class ReservationService {
 
   #expirer(reservation, maintenant) {
     const etaitAcceptee = reservation.statut === StatutReservation.ACCEPTEE;
-    reservation.changerStatut(StatutReservation.EXPIREE, maintenant);
+    reservation.expirer(maintenant);
     if (etaitAcceptee) {
       for (const { ligne, stock } of this.#stocksDesLignes(reservation)) {
         if (!stock) throw new StockInsuffisantError("Stock de présentation introuvable.");
@@ -119,8 +124,8 @@ export class ReservationService {
 
   demander(clientId, pharmacieId, lignesDemandees) {
     const client = this.#exigerClient(clientId);
-    if (!Array.isArray(lignesDemandees) || lignesDemandees.length === 0) {
-      throw new DemandeInvalideError("Une réservation doit contenir au moins une ligne.");
+    if (!Array.isArray(lignesDemandees)) {
+      throw new DemandeInvalideError("Les lignes de la réservation doivent être fournies sous forme de liste.");
     }
     const pharmacie = this.pharmacies.trouver(pharmacieId);
     if (!pharmacie.partenaire) {
@@ -128,17 +133,11 @@ export class ReservationService {
     }
     const pharmacien = this.#pharmacienDe(pharmacieId);
 
-    const presentationsVues = new Set();
-    const lignesPreparees = lignesDemandees.map((demande) => {
+    const lignes = lignesDemandees.map((demande) => {
       if (!demande || typeof demande !== "object" || Array.isArray(demande)) {
         throw new DemandeInvalideError("Chaque ligne doit être un objet.");
       }
       const presentation = this.presentations.trouver(demande.presentationId);
-      if (presentationsVues.has(presentation.id)) {
-        throw new DemandeInvalideError("Une présentation ne peut apparaître qu'une fois par réservation.");
-      }
-      presentationsVues.add(presentation.id);
-
       const quantiteBase = this.#quantiteBase(presentation, demande.quantite, demande.unite);
       const stock = this.stocks.trouver(pharmacieId, presentation.id);
       const disponible = stock ? stock.disponible : 0;
@@ -154,32 +153,17 @@ export class ReservationService {
       };
     });
 
-    const reservationsActives = this.reservations.lister().filter((reservation) =>
-      reservation.estActive && reservation.clientId === client.id &&
-      reservation.pharmacienId === pharmacien.id);
-    const reservationActiveIds = new Set(reservationsActives.map((reservation) => reservation.id));
-    const doublon = this.lignes.lister().some((ligne) =>
-      reservationActiveIds.has(ligne.reservationId) &&
-      presentationsVues.has(ligne.presentationId));
-    if (doublon) {
-      throw new OperationDejaEffectueeError("Une réservation active existe déjà pour une présentation demandée.");
-    }
-
     const maintenant = this.horloge();
-    const reservation = this.reservations.ajouter(new Reservation({
+    const reservation = new Reservation({
       id: this.reservations.prochainId(),
       clientId: client.id,
       pharmacienId: pharmacien.id,
       creeLe: maintenant,
       expireLe: this.#echeance(maintenant),
-    }));
-    for (const ligne of lignesPreparees) {
-      this.lignes.ajouter(new LigneReservation({
-        reservationId: reservation.id,
-        ...ligne,
-      }));
-    }
-    return reservation;
+      lignes,
+    });
+    this.#exigerAucunDoublonActif(reservation);
+    return this.reservations.ajouter(reservation);
   }
 
   accepter(reservationId, pharmacienId) {
@@ -195,8 +179,7 @@ export class ReservationService {
       }
     }
     for (const { ligne, stock } of lignesAvecStocks) stock.reserver(ligne.quantiteBase);
-    reservation.changerStatut(StatutReservation.ACCEPTEE, maintenant);
-    reservation.expireLe = this.#echeance(maintenant);
+    reservation.accepter(maintenant, this.#echeance(maintenant));
     return reservation;
   }
 
@@ -206,8 +189,7 @@ export class ReservationService {
     const maintenant = this.horloge();
     reservation.verifierTransitionDeStatut(StatutReservation.REFUSEE);
     this.#exigerNonExpiree(reservation, maintenant);
-    reservation.changerStatut(StatutReservation.REFUSEE, maintenant);
-    reservation.motifRefus = motifRefus;
+    reservation.refuser(maintenant, motifRefus);
     return reservation;
   }
 
@@ -221,7 +203,7 @@ export class ReservationService {
     reservation.verifierTransitionDeStatut(StatutReservation.ANNULEE);
     this.#exigerNonExpiree(reservation, maintenant);
     const etaitAcceptee = reservation.statut === StatutReservation.ACCEPTEE;
-    reservation.changerStatut(StatutReservation.ANNULEE, maintenant);
+    reservation.annuler(maintenant);
     if (etaitAcceptee) {
       for (const { ligne, stock } of this.#stocksDesLignes(reservation)) {
         if (!stock) throw new StockInsuffisantError("Stock de présentation introuvable.");
@@ -244,7 +226,7 @@ export class ReservationService {
       }
     }
     for (const { ligne, stock } of lignesAvecStocks) stock.retirer(ligne.quantiteBase);
-    reservation.changerStatut(StatutReservation.RETIREE, maintenant);
+    reservation.marquerRetiree(maintenant);
     return reservation;
   }
 
@@ -271,10 +253,6 @@ export class ReservationService {
       throw new AccesInterditError("Vous ne pouvez pas consulter cette réservation.");
     }
     return reservation;
-  }
-
-  lignesPour(reservationId) {
-    return this.lignes.lister().filter((ligne) => ligne.reservationId === reservationId);
   }
 
   listerPourPharmacie(pharmacieId, pharmacienId, statut = null) {

@@ -1,7 +1,6 @@
 import http from "node:http";
 import { Repository } from "../repositories/Repository.js";
 import { StockRepository } from "../repositories/StockRepository.js";
-import { LigneReservationRepository } from "../repositories/LigneReservationRepository.js";
 import { StockService } from "../services/StockService.js";
 import { ReservationService } from "../services/ReservationService.js";
 import { PharmacieController } from "../controllers/PharmacieController.js";
@@ -20,14 +19,13 @@ function creerEtat() {
   const utilisateurs = new Repository("Utilisateur", "usr-");
   const stocks = new StockRepository();
   const reservations = new Repository("Réservation", "res-");
-  const lignesReservation = new LigneReservationRepository();
   const etat = {
-    decalageMillisecondes: 0, pharmacies, medicaments, presentations, utilisateurs, stocks, reservations, lignesReservation,
+    decalageMillisecondes: 0, pharmacies, medicaments, presentations, utilisateurs, stocks, reservations,
   };
   etat.serviceStock = new StockService(stocks, presentations, medicaments, pharmacies, utilisateurs);
   // Horloge décalable (/admin/horloge) pour tester l'expiration depuis Postman.
   etat.serviceReservation = new ReservationService(
-    reservations, lignesReservation, stocks, pharmacies, presentations, utilisateurs,
+    reservations, stocks, pharmacies, presentations, utilisateurs,
     () => new Date(Date.now() + etat.decalageMillisecondes));
   etat.controleurPharmacie = new PharmacieController(
     pharmacies, medicaments, presentations, etat.serviceStock, utilisateurs);
@@ -78,7 +76,8 @@ const ROUTES = [
       presentations: etat.presentations.lister().length,
       utilisateurs: etat.utilisateurs.lister().length,
       reservations: Object.keys(creees).length,
-      lignesReservation: etat.lignesReservation.lister().length,
+      lignesReservation: etat.reservations.lister()
+        .reduce((total, reservation) => total + reservation.lignes.length, 0),
       idsReservations: Object.fromEntries(Object.entries(creees).map(([cle, reservation]) => [cle, reservation.id])),
     } };
   }],

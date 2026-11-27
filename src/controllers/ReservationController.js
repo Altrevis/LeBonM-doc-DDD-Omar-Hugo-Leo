@@ -8,23 +8,19 @@ export class ReservationController {
     this.service = serviceReservation;
   }
 
-  #vue(reservation) {
-    return vueReservation(reservation, this.service.lignesPour(reservation.id));
-  }
-
   demander(corps) {
     const donnees = exigerObjet(corps);
-    return this.#vue(this.service.demander(donnees.clientId, donnees.pharmacieId, donnees.lignes));
+    return vueReservation(this.service.demander(donnees.clientId, donnees.pharmacieId, donnees.lignes));
   }
 
-  consulter(id, utilisateurId) { return this.#vue(this.service.consulter(id, utilisateurId)); }
-  accepter(id, corps) { return this.#vue(this.service.accepter(id, exigerObjet(corps).pharmacienId)); }
+  consulter(id, utilisateurId) { return vueReservation(this.service.consulter(id, utilisateurId)); }
+  accepter(id, corps) { return vueReservation(this.service.accepter(id, exigerObjet(corps).pharmacienId)); }
   refuser(id, corps) {
     const donnees = exigerObjet(corps);
-    return this.#vue(this.service.refuser(id, donnees.pharmacienId, donnees.motifRefus ?? ""));
+    return vueReservation(this.service.refuser(id, donnees.pharmacienId, donnees.motifRefus ?? ""));
   }
-  annuler(id, corps) { return this.#vue(this.service.annuler(id, exigerObjet(corps).clientId)); }
-  retirer(id, corps) { return this.#vue(this.service.marquerRetiree(id, exigerObjet(corps).pharmacienId)); }
+  annuler(id, corps) { return vueReservation(this.service.annuler(id, exigerObjet(corps).clientId)); }
+  retirer(id, corps) { return vueReservation(this.service.marquerRetiree(id, exigerObjet(corps).pharmacienId)); }
   expirer() { return this.service.expirerLesReservations(); }
 
   listerParPharmacie(pharmacieId, pharmacienId, statut) {
@@ -32,6 +28,6 @@ export class ReservationController {
       throw new DemandeInvalideError(`Statut inconnu : ${statut}.`);
     }
     return this.service.listerPourPharmacie(pharmacieId, pharmacienId, statut)
-      .map((reservation) => this.#vue(reservation));
+      .map((reservation) => vueReservation(reservation));
   }
 }

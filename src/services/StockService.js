@@ -26,16 +26,9 @@ export class StockService {
     if (!pharmacie.partenaire) {
       throw new DemandeInvalideError(`La pharmacie ${pharmacie.nom} n'est pas partenaire.`);
     }
-    if (!Number.isInteger(quantiteBase) || quantiteBase < 0) {
-      throw new DemandeInvalideError(`Quantité de base invalide : ${quantiteBase}.`);
-    }
     const existant = this.stocks.trouver(pharmacieId, presentationId);
     if (existant) {
-      if (quantiteBase < existant.quantiteReserveeBase) {
-        throw new DemandeInvalideError(
-          `Impossible de descendre à ${quantiteBase} : ${existant.quantiteReserveeBase} unité(s) déjà réservée(s).`);
-      }
-      existant.quantiteBase = quantiteBase;
+      existant.ajuster(quantiteBase);
       return existant;
     }
     return this.stocks.sauvegarder(new Stock({ pharmacieId, presentationId, quantiteBase }));

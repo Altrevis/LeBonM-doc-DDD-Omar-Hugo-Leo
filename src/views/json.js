@@ -32,7 +32,7 @@ export const vueUtilisateur = (utilisateur) => ({
   pharmacieId: utilisateur.pharmacieId,
 });
 
-export const vueReservation = (reservation, lignes) => ({
+export const vueReservation = (reservation) => ({
   id: reservation.id,
   statut: reservation.statut,
   creeLe: reservation.creeLe,
@@ -40,7 +40,7 @@ export const vueReservation = (reservation, lignes) => ({
   motifRefus: reservation.motifRefus,
   clientId: reservation.clientId,
   pharmacienId: reservation.pharmacienId,
-  lignes,
+  lignes: reservation.lignes,
 });
 
 export const vueErreur = (type, message) => ({ erreur: { type, message } });
