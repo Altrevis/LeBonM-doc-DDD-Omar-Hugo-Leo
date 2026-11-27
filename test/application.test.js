@@ -30,6 +30,15 @@ afterEach(() => {
   }
 });
 
+test("a base URL ending with a slash still reaches the routes", async () => {
+  const adresseDeBase = await demarrerApplication();
+  const chargement = await requete(`${adresseDeBase}/`, "/admin/seed", { methode: "POST" });
+  assert.equal(chargement.statut, 200);
+
+  const sante = await requete(`${adresseDeBase}/`, "/sante");
+  assert.equal(sante.statut, 200);
+});
+
 test("seed loads users and presentations and preserves pharmacy stock links", async () => {
   const adresseDeBase = await demarrerApplication();
   const chargement = await requete(adresseDeBase, "/admin/seed", { methode: "POST" });

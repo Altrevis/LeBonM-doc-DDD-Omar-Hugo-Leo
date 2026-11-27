@@ -103,7 +103,8 @@ export function creerApplication() {
 
   return http.createServer(async (requete, reponse) => {
     try {
-      const adresse = new URL(requete.url, "http://localhost");
+      // "//admin/seed" (baseUrl terminée par "/") serait lu comme l'hôte "admin" : on garde un seul "/".
+      const adresse = new URL(requete.url.replace(/^\/+/, "/"), "http://localhost");
       const brut = await lireCorps(requete);
       let corpsRequete = null;
       if (brut.trim()) {
