@@ -22,110 +22,116 @@ function creerEtat() {
   const reservations = new Repository("Réservation", "res-");
   const lignesReservation = new LigneReservationRepository();
   const etat = {
-    decalageMs: 0, pharmacies, medicaments, presentations, utilisateurs, stocks, reservations, lignesReservation,
+    decalageMillisecondes: 0, pharmacies, medicaments, presentations, utilisateurs, stocks, reservations, lignesReservation,
   };
-  etat.stockService = new StockService(stocks, presentations, medicaments, pharmacies, utilisateurs);
+  etat.serviceStock = new StockService(stocks, presentations, medicaments, pharmacies, utilisateurs);
   // Horloge décalable (/admin/horloge) pour tester l'expiration depuis Postman.
-  etat.reservationService = new ReservationService(
+  etat.serviceReservation = new ReservationService(
     reservations, lignesReservation, stocks, pharmacies, presentations, utilisateurs,
-    () => new Date(Date.now() + etat.decalageMs));
-  etat.pharmacieCtrl = new PharmacieController(
-    pharmacies, medicaments, presentations, etat.stockService, utilisateurs);
-  etat.reservationCtrl = new ReservationController(etat.reservationService);
-  etat.utilisateurCtrl = new UtilisateurController(utilisateurs, pharmacies);
+    () => new Date(Date.now() + etat.decalageMillisecondes));
+  etat.controleurPharmacie = new PharmacieController(
+    pharmacies, medicaments, presentations, etat.serviceStock, utilisateurs);
+  etat.controleurReservation = new ReservationController(etat.serviceReservation);
+  etat.controleurUtilisateur = new UtilisateurController(utilisateurs, pharmacies);
   return etat;
 }
 
 const ROUTES = [
-  ["GET", /^\/sante$/, () => ({ status: 200, body: { statut: "ok" } })],
+  ["GET", /^\/sante$/, () => ({ statut: 200, corps: { statut: "ok" } })],
 
   //Pharmacies, médicaments, stocks, recherche
-  ["POST", /^\/pharmacies$/, (c) => ({ status: 201, body: c.e.pharmacieCtrl.creerPharmacie(c.body) })],
-  ["POST", /^\/medicaments$/, (c) => ({ status: 201, body: c.e.pharmacieCtrl.creerMedicament(c.body) })],
-  ["POST", /^\/medicaments\/([^/]+)\/presentations$/, (c) => ({
-    status: 201, body: c.e.pharmacieCtrl.creerPresentation(c.p[0], c.body) })],
-  ["POST", /^\/utilisateurs$/, (c) => ({
-    status: 201, body: vueUtilisateur(c.e.utilisateurCtrl.creer(c.body)) })],
-  ["PUT", /^\/pharmacies\/([^/]+)\/stocks\/([^/]+)$/, (c) => ({
-    status: 200, body: vueStock(c.e.pharmacieCtrl.definirStock(c.p[0], c.p[1], c.body)) })],
-  ["GET", /^\/disponibilites$/, (c) => ({ status: 200, body: c.e.pharmacieCtrl.rechercher(c.query.get("nom")) })],
+  ["POST", /^\/pharmacies$/, (contexte) => ({ statut: 201, corps: contexte.etat.controleurPharmacie.creerPharmacie(contexte.corps) })],
+  ["POST", /^\/medicaments$/, (contexte) => ({ statut: 201, corps: contexte.etat.controleurPharmacie.creerMedicament(contexte.corps) })],
+  ["POST", /^\/medicaments\/([^/]+)\/presentations$/, (contexte) => ({
+    statut: 201, corps: contexte.etat.controleurPharmacie.creerPresentation(contexte.parametresChemin[0], contexte.corps) })],
+  ["POST", /^\/utilisateurs$/, (contexte) => ({
+    statut: 201, corps: vueUtilisateur(contexte.etat.controleurUtilisateur.creer(contexte.corps)) })],
+  ["PUT", /^\/pharmacies\/([^/]+)\/stocks\/([^/]+)$/, (contexte) => ({
+    statut: 200, corps: vueStock(contexte.etat.controleurPharmacie.definirStock(contexte.parametresChemin[0], contexte.parametresChemin[1], contexte.corps)) })],
+  ["GET", /^\/disponibilites$/, (contexte) => ({ statut: 200, corps: contexte.etat.controleurPharmacie.rechercher(contexte.parametresRequete.get("nom")) })],
 
   //Réservations
-  ["POST", /^\/reservations$/, (c) => ({ status: 201, body: c.e.reservationCtrl.demander(c.body) })],
-  ["GET", /^\/reservations\/([^/]+)$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.consulter(c.p[0], c.query.get("clientId")) })],
-  ["POST", /^\/reservations\/([^/]+)\/accepter$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.accepter(c.p[0], c.body) })],
-  ["POST", /^\/reservations\/([^/]+)\/refuser$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.refuser(c.p[0], c.body) })],
-  ["POST", /^\/reservations\/([^/]+)\/annuler$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.annuler(c.p[0], c.body) })],
-  ["POST", /^\/reservations\/([^/]+)\/retirer$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.retirer(c.p[0], c.body) })],
-  ["GET", /^\/pharmacies\/([^/]+)\/reservations$/, (c) => ({
-    status: 200, body: c.e.reservationCtrl.listerParPharmacie(
-      c.p[0], c.query.get("pharmacienId"), c.query.get("statut")) })],
+  ["POST", /^\/reservations$/, (contexte) => ({ statut: 201, corps: contexte.etat.controleurReservation.demander(contexte.corps) })],
+  ["GET", /^\/reservations\/([^/]+)$/, (contexte) => ({
+    statut: 200, corps: contexte.etat.controleurReservation.consulter(contexte.parametresChemin[0], contexte.parametresRequete.get("clientId")) })],
+  ["POST", /^\/reservations\/([^/]+)\/accepter$/, (contexte) => ({
+    statut: 200, corps: contexte.etat.controleurReservation.accepter(contexte.parametresChemin[0], contexte.corps) })],
+  ["POST", /^\/reservations\/([^/]+)\/refuser$/, (contexte) => ({
+    statut: 200, corps: contexte.etat.controleurReservation.refuser(contexte.parametresChemin[0], contexte.corps) })],
+  ["POST", /^\/reservations\/([^/]+)\/annuler$/, (contexte) => ({
+    statut: 200, corps: contexte.etat.controleurReservation.annuler(contexte.parametresChemin[0], contexte.corps) })],
+  ["POST", /^\/reservations\/([^/]+)\/retirer$/, (contexte) => ({
+    statut: 200, corps: contexte.etat.controleurReservation.retirer(contexte.parametresChemin[0], contexte.corps) })],
+  ["GET", /^\/pharmacies\/([^/]+)\/reservations$/, (contexte) => ({
+    statut: 200, corps: contexte.etat.controleurReservation.listerParPharmacie(
+      contexte.parametresChemin[0], contexte.parametresRequete.get("pharmacienId"), contexte.parametresRequete.get("statut")) })],
 
   //Outils de test (à retirer en production)
-  ["POST", /^\/admin\/reset$/, (c) => { c.app.etat = creerEtat(); return { status: 200, body: { reinitialise: true } }; }],
-  ["POST", /^\/admin\/seed$/, (c) => {
-    c.app.etat = creerEtat();
-    const e = c.app.etat;
-    const creees = chargerDonnees(e, jeuDeDonnees);
-    return { status: 200, body: {
-      pharmacies: e.pharmacies.lister().length,
-      medicaments: e.medicaments.lister().length,
-      presentations: e.presentations.lister().length,
-      utilisateurs: e.utilisateurs.lister().length,
+  ["POST", /^\/admin\/reset$/, (contexte) => { contexte.application.etat = creerEtat(); return { statut: 200, corps: { reinitialise: true } }; }],
+  ["POST", /^\/admin\/seed$/, (contexte) => {
+    contexte.application.etat = creerEtat();
+    const etat = contexte.application.etat;
+    const creees = chargerDonnees(etat, jeuDeDonnees);
+    return { statut: 200, corps: {
+      pharmacies: etat.pharmacies.lister().length,
+      medicaments: etat.medicaments.lister().length,
+      presentations: etat.presentations.lister().length,
+      utilisateurs: etat.utilisateurs.lister().length,
       reservations: Object.keys(creees).length,
-      lignesReservation: e.lignesReservation.lister().length,
-      idsReservations: Object.fromEntries(Object.entries(creees).map(([k, r]) => [k, r.id])),
+      lignesReservation: etat.lignesReservation.lister().length,
+      idsReservations: Object.fromEntries(Object.entries(creees).map(([cle, reservation]) => [cle, reservation.id])),
     } };
   }],
-  ["POST", /^\/admin\/horloge$/, (c) => {
-    const h = exigerObjet(c.body).avancerHeures;
-    if (typeof h !== "number" || !Number.isFinite(h)) throw new DemandeInvalideError("avancerHeures (nombre) attendu.");
-    c.e.decalageMs += h * 3600 * 1000;
-    return { status: 200, body: { maintenant: new Date(Date.now() + c.e.decalageMs).toISOString() } };
+  ["POST", /^\/admin\/horloge$/, (contexte) => {
+    const heures = exigerObjet(contexte.corps).avancerHeures;
+    if (typeof heures !== "number" || !Number.isFinite(heures)) throw new DemandeInvalideError("avancerHeures (nombre) attendu.");
+    contexte.etat.decalageMillisecondes += heures * 3600 * 1000;
+    return { statut: 200, corps: { maintenant: new Date(Date.now() + contexte.etat.decalageMillisecondes).toISOString() } };
   }],
-  ["POST", /^\/admin\/expirer$/, (c) => ({ status: 200, body: { expirees: c.e.reservationCtrl.expirer().map((r) => r.id) } })],
+  ["POST", /^\/admin\/expirer$/, (contexte) => ({ statut: 200, corps: { expirees: contexte.etat.controleurReservation.expirer().map((reservation) => reservation.id) } })],
 ];
 
-const lireCorps = (req) => new Promise((resolve, reject) => {
-  let data = "";
-  req.on("data", (chunk) => (data += chunk));
-  req.on("end", () => resolve(data));
-  req.on("error", reject);
+const lireCorps = (requete) => new Promise((resoudre, rejeter) => {
+  let donnees = "";
+  requete.on("data", (morceau) => (donnees += morceau));
+  requete.on("end", () => resoudre(donnees));
+  requete.on("error", rejeter);
 });
 
-export function creerApp() {
-  const app = { etat: creerEtat() };
+export function creerApplication() {
+  const application = { etat: creerEtat() };
 
-  return http.createServer(async (req, res) => {
+  return http.createServer(async (requete, reponse) => {
     try {
-      const url = new URL(req.url, "http://localhost");
-      const brut = await lireCorps(req);
-      let body = null;
+      const adresse = new URL(requete.url, "http://localhost");
+      const brut = await lireCorps(requete);
+      let corpsRequete = null;
       if (brut.trim()) {
-        try { body = JSON.parse(brut); } catch { throw new DemandeInvalideError("JSON invalide."); }
+        try { corpsRequete = JSON.parse(brut); } catch { throw new DemandeInvalideError("JSON invalide."); }
       }
-      const chemin = url.pathname.replace(/\/+$/, "") || "/";
-      const candidates = ROUTES.filter(([, re]) => re.test(chemin));
-      if (candidates.length === 0) {
-        return envoyer(res, 404, vueErreur("RouteIntrouvable", `Route inconnue : ${req.method} ${chemin}`));
+      const chemin = adresse.pathname.replace(/\/+$/, "") || "/";
+      const routesCandidates = ROUTES.filter(([, motif]) => motif.test(chemin));
+      if (routesCandidates.length === 0) {
+        return envoyer(reponse, 404, vueErreur("RouteIntrouvable", `Route inconnue : ${requete.method} ${chemin}`));
       }
-      const route = candidates.find(([m]) => m === req.method);
+      const route = routesCandidates.find(([methode]) => methode === requete.method);
       if (!route) {
-        return envoyer(res, 405, vueErreur("MethodeNonAutorisee", `${req.method} non autorisé sur ${chemin}`));
+        return envoyer(reponse, 405, vueErreur("MethodeNonAutorisee", `${requete.method} non autorisé sur ${chemin}`));
       }
-      const p = route[1].exec(chemin).slice(1).map(decodeURIComponent);
-      const { status, body: reponse } = route[2]({ app, e: app.etat, p, query: url.searchParams, body });
-      envoyer(res, status, reponse);
-    } catch (e) {
-      const r = reponseErreur(e);
-      if (r) return envoyer(res, r.status, r.body);
-      console.error(e);
-      envoyer(res, 500, vueErreur("ErreurInterne", "Erreur interne."));
+      const parametresChemin = route[1].exec(chemin).slice(1).map(decodeURIComponent);
+      const { statut, corps: corpsReponse } = route[2]({
+        application,
+        etat: application.etat,
+        parametresChemin,
+        parametresRequete: adresse.searchParams,
+        corps: corpsRequete,
+      });
+      envoyer(reponse, statut, corpsReponse);
+    } catch (erreur) {
+      const reponseEchec = reponseErreur(erreur);
+      if (reponseEchec) return envoyer(reponse, reponseEchec.statut, reponseEchec.corps);
+      console.error(erreur);
+      envoyer(reponse, 500, vueErreur("ErreurInterne", "Erreur interne."));
     }
   });
 }

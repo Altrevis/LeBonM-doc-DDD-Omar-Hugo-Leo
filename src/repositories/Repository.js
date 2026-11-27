@@ -1,8 +1,8 @@
 import { EntiteIntrouvableError } from "../errors.js";
 
 export class Repository {
-  #items = new Map();
-  #seq = 0;
+  #elements = new Map();
+  #compteur = 0;
 
   constructor(nomEntite, prefixeId) {
     this.nomEntite = nomEntite;
@@ -10,21 +10,21 @@ export class Repository {
   }
 
   prochainId() {
-    return `${this.prefixeId}${++this.#seq}`;
+    return `${this.prefixeId}${++this.#compteur}`;
   }
 
-  ajouter(item) {
-    this.#items.set(item.id, item);
-    return item;
+  ajouter(element) {
+    this.#elements.set(element.id, element);
+    return element;
   }
 
   trouver(id) {
-    const item = this.#items.get(id);
-    if (!item) throw new EntiteIntrouvableError(`${this.nomEntite} introuvable : ${id}.`);
-    return item;
+    const element = this.#elements.get(id);
+    if (!element) throw new EntiteIntrouvableError(`${this.nomEntite} introuvable : ${id}.`);
+    return element;
   }
 
   lister() {
-    return [...this.#items.values()];
+    return [...this.#elements.values()];
   }
 }

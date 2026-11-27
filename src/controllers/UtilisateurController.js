@@ -10,16 +10,16 @@ export class UtilisateurController {
   }
 
   creer(corps) {
-    const b = exigerObjet(corps);
-    if (b.role === RoleEnum.ADMIN) {
+    const donnees = exigerObjet(corps);
+    if (donnees.role === RoleEnum.ADMIN) {
       throw new AccesInterditError("Le rôle administrateur ne peut pas être attribué via cette route.");
     }
-    const pharmacieId = b.pharmacieId ?? null;
+    const pharmacieId = donnees.pharmacieId ?? null;
     const utilisateur = new Utilisateur({
       id: this.utilisateurs.prochainId(),
-      nom: b.nom,
-      email: b.email,
-      role: b.role,
+      nom: donnees.nom,
+      email: donnees.email,
+      role: donnees.role,
       pharmacieId,
     });
     if (utilisateur.role === RoleEnum.PHARMACIEN) this.pharmacies.trouver(pharmacieId);

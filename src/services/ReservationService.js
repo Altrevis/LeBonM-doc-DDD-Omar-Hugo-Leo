@@ -6,7 +6,7 @@ import { RoleEnum } from "../enums/RoleEnum.js";
 import { UniteDemandee } from "../enums/UniteDemandee.js";
 import { LigneReservation } from "../models/LigneReservation.js";
 import { Reservation } from "../models/Reservation.js";
-import { StatutReservation as S } from "../models/StatutReservation.js";
+import { StatutReservation } from "../models/StatutReservation.js";
 
 export class ReservationService {
   static DELAI_RETRAIT_HEURES = 24;
@@ -107,8 +107,8 @@ export class ReservationService {
   }
 
   #expirer(reservation, maintenant) {
-    const etaitAcceptee = reservation.statut === S.ACCEPTEE;
-    reservation.changerStatut(S.EXPIREE, maintenant);
+    const etaitAcceptee = reservation.statut === StatutReservation.ACCEPTEE;
+    reservation.changerStatut(StatutReservation.EXPIREE, maintenant);
     if (etaitAcceptee) {
       for (const { ligne, stock } of this.#stocksDesLignes(reservation)) {
         if (!stock) throw new StockInsuffisantError("Stock de présentation introuvable.");
@@ -186,7 +186,7 @@ export class ReservationService {
     const reservation = this.reservations.trouver(reservationId);
     this.#exigerPharmacienPour(pharmacienId, reservation);
     const maintenant = this.horloge();
-    reservation.verifierTransitionDeStatut(S.ACCEPTEE);
+    reservation.verifierTransitionDeStatut(StatutReservation.ACCEPTEE);
     this.#exigerNonExpiree(reservation, maintenant);
     const lignesAvecStocks = this.#stocksDesLignes(reservation);
     for (const { ligne, stock } of lignesAvecStocks) {
@@ -195,7 +195,7 @@ export class ReservationService {
       }
     }
     for (const { ligne, stock } of lignesAvecStocks) stock.reserver(ligne.quantiteBase);
-    reservation.changerStatut(S.ACCEPTEE, maintenant);
+    reservation.changerStatut(StatutReservation.ACCEPTEE, maintenant);
     reservation.expireLe = this.#echeance(maintenant);
     return reservation;
   }
@@ -204,9 +204,9 @@ export class ReservationService {
     const reservation = this.reservations.trouver(reservationId);
     this.#exigerPharmacienPour(pharmacienId, reservation);
     const maintenant = this.horloge();
-    reservation.verifierTransitionDeStatut(S.REFUSEE);
+    reservation.verifierTransitionDeStatut(StatutReservation.REFUSEE);
     this.#exigerNonExpiree(reservation, maintenant);
-    reservation.changerStatut(S.REFUSEE, maintenant);
+    reservation.changerStatut(StatutReservation.REFUSEE, maintenant);
     reservation.motifRefus = motifRefus;
     return reservation;
   }
@@ -218,10 +218,10 @@ export class ReservationService {
       throw new AccesInterditError("Un client ne peut annuler que ses propres réservations.");
     }
     const maintenant = this.horloge();
-    reservation.verifierTransitionDeStatut(S.ANNULEE);
+    reservation.verifierTransitionDeStatut(StatutReservation.ANNULEE);
     this.#exigerNonExpiree(reservation, maintenant);
-    const etaitAcceptee = reservation.statut === S.ACCEPTEE;
-    reservation.changerStatut(S.ANNULEE, maintenant);
+    const etaitAcceptee = reservation.statut === StatutReservation.ACCEPTEE;
+    reservation.changerStatut(StatutReservation.ANNULEE, maintenant);
     if (etaitAcceptee) {
       for (const { ligne, stock } of this.#stocksDesLignes(reservation)) {
         if (!stock) throw new StockInsuffisantError("Stock de présentation introuvable.");
@@ -235,7 +235,7 @@ export class ReservationService {
     const reservation = this.reservations.trouver(reservationId);
     this.#exigerPharmacienPour(pharmacienId, reservation);
     const maintenant = this.horloge();
-    reservation.verifierTransitionDeStatut(S.RETIREE);
+    reservation.verifierTransitionDeStatut(StatutReservation.RETIREE);
     this.#exigerNonExpiree(reservation, maintenant);
     const lignesAvecStocks = this.#stocksDesLignes(reservation);
     for (const { ligne, stock } of lignesAvecStocks) {
@@ -244,7 +244,7 @@ export class ReservationService {
       }
     }
     for (const { ligne, stock } of lignesAvecStocks) stock.retirer(ligne.quantiteBase);
-    reservation.changerStatut(S.RETIREE, maintenant);
+    reservation.changerStatut(StatutReservation.RETIREE, maintenant);
     return reservation;
   }
 

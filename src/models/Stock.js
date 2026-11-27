@@ -1,8 +1,8 @@
 import { DemandeInvalideError, StockInsuffisantError } from "../errors.js";
 
-function verifierQuantitePositive(q) {
-  if (!Number.isInteger(q) || q <= 0) {
-    throw new DemandeInvalideError(`Quantité invalide : ${q} (entier strictement positif attendu).`);
+function verifierQuantitePositive(quantite) {
+  if (!Number.isInteger(quantite) || quantite <= 0) {
+    throw new DemandeInvalideError(`Quantité invalide : ${quantite} (entier strictement positif attendu).`);
   }
 }
 

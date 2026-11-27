@@ -1,48 +1,48 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { creerApp } from "../src/http/app.js";
+import { creerApplication } from "../src/http/app.js";
 
-const servers = [];
+const serveurs = [];
 
-async function demarrerApp() {
-  const app = creerApp();
-  await new Promise((resolve, reject) => {
-    app.once("error", reject);
-    app.listen(0, "127.0.0.1", resolve);
+async function demarrerApplication() {
+  const serveur = creerApplication();
+  await new Promise((resoudre, rejeter) => {
+    serveur.once("error", rejeter);
+    serveur.listen(0, "127.0.0.1", resoudre);
   });
-  servers.push(app);
-  return `http://127.0.0.1:${app.address().port}`;
+  serveurs.push(serveur);
+  return `http://127.0.0.1:${serveur.address().port}`;
 }
 
-async function requete(baseUrl, route, { method = "GET", body } = {}) {
-  const response = await fetch(`${baseUrl}${route}`, {
-    method,
-    headers: body === undefined ? {} : { "content-type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
+async function requete(adresseDeBase, route, { methode = "GET", corps } = {}) {
+  const reponse = await fetch(`${adresseDeBase}${route}`, {
+    method: methode,
+    headers: corps === undefined ? {} : { "content-type": "application/json" },
+    body: corps === undefined ? undefined : JSON.stringify(corps),
   });
-  return { status: response.status, body: await response.json() };
+  return { statut: reponse.status, corps: await reponse.json() };
 }
 
 afterEach(() => {
-  for (const app of servers.splice(0)) {
-    app.close();
-    if (typeof app.closeAllConnections === "function") app.closeAllConnections();
+  for (const serveur of serveurs.splice(0)) {
+    serveur.close();
+    if (typeof serveur.closeAllConnections === "function") serveur.closeAllConnections();
   }
 });
 
 test("seed loads users and presentations and preserves pharmacy stock links", async () => {
-  const baseUrl = await demarrerApp();
-  const seed = await requete(baseUrl, "/admin/seed", { method: "POST" });
+  const adresseDeBase = await demarrerApplication();
+  const chargement = await requete(adresseDeBase, "/admin/seed", { methode: "POST" });
 
-  assert.equal(seed.status, 200);
+  assert.equal(chargement.statut, 200);
   assert.deepEqual(
     {
-      pharmacies: seed.body.pharmacies,
-      medicaments: seed.body.medicaments,
-      presentations: seed.body.presentations,
-      utilisateurs: seed.body.utilisateurs,
-      reservations: seed.body.reservations,
-      lignesReservation: seed.body.lignesReservation,
+      pharmacies: chargement.corps.pharmacies,
+      medicaments: chargement.corps.medicaments,
+      presentations: chargement.corps.presentations,
+      utilisateurs: chargement.corps.utilisateurs,
+      reservations: chargement.corps.reservations,
+      lignesReservation: chargement.corps.lignesReservation,
     },
     {
       pharmacies: 6, medicaments: 12, presentations: 13,
@@ -50,156 +50,156 @@ test("seed loads users and presentations and preserves pharmacy stock links", as
     },
   );
 
-  const disponibilites = await requete(baseUrl, "/disponibilites?nom=doliprane");
-  assert.equal(disponibilites.status, 200);
-  assert.equal(disponibilites.body.length, 3);
-  assert.ok(disponibilites.body.every((item) => item.presentation && item.medicament));
+  const disponibilites = await requete(adresseDeBase, "/disponibilites?nom=doliprane");
+  assert.equal(disponibilites.statut, 200);
+  assert.equal(disponibilites.corps.length, 3);
+  assert.ok(disponibilites.corps.every((disponibilite) => disponibilite.presentation && disponibilite.medicament));
 });
 
 test("users can be created and pharmacists must reference a real pharmacy", async () => {
-  const baseUrl = await demarrerApp();
-  await requete(baseUrl, "/admin/seed", { method: "POST" });
+  const adresseDeBase = await demarrerApplication();
+  await requete(adresseDeBase, "/admin/seed", { methode: "POST" });
 
-  const pharmacist = await requete(baseUrl, "/utilisateurs", {
-    method: "POST",
-    body: {
+  const pharmacien = await requete(adresseDeBase, "/utilisateurs", {
+    methode: "POST",
+    corps: {
       nom: "Pharmacien",
       email: "nouveau@example.test",
       role: "pharmacien",
       pharmacieId: "ph-centre",
     },
   });
-  assert.equal(pharmacist.status, 201);
-  assert.equal(pharmacist.body.pharmacieId, "ph-centre");
-  assert.equal("motDePasse" in pharmacist.body, false);
+  assert.equal(pharmacien.statut, 201);
+  assert.equal(pharmacien.corps.pharmacieId, "ph-centre");
+  assert.equal("motDePasse" in pharmacien.corps, false);
 
-  const unknownPharmacy = await requete(baseUrl, "/utilisateurs", {
-    method: "POST",
-    body: {
+  const pharmacieInconnue = await requete(adresseDeBase, "/utilisateurs", {
+    methode: "POST",
+    corps: {
       nom: "Pharmacien",
       email: "invalide@example.test",
       role: "pharmacien",
       pharmacieId: "ph-inconnue",
     },
   });
-  assert.equal(unknownPharmacy.status, 404);
+  assert.equal(pharmacieInconnue.statut, 404);
 
-  const adminRoleAssignment = await requete(baseUrl, "/utilisateurs", {
-    method: "POST",
-    body: {
+  const attributionRoleAdministrateur = await requete(adresseDeBase, "/utilisateurs", {
+    methode: "POST",
+    corps: {
       nom: "Admin",
       email: "admin2@example.test",
       role: "admin",
     },
   });
-  assert.equal(adminRoleAssignment.status, 403);
+  assert.equal(attributionRoleAdministrateur.statut, 403);
 });
 
 test("only an administrator can create pharmacies", async () => {
-  const baseUrl = await demarrerApp();
-  await requete(baseUrl, "/admin/seed", { method: "POST" });
+  const adresseDeBase = await demarrerApplication();
+  await requete(adresseDeBase, "/admin/seed", { methode: "POST" });
 
-  const missingAdmin = await requete(baseUrl, "/pharmacies", {
-    method: "POST",
-    body: { nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
+  const administrateurManquant = await requete(adresseDeBase, "/pharmacies", {
+    methode: "POST",
+    corps: { nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
   });
-  assert.equal(missingAdmin.status, 400);
+  assert.equal(administrateurManquant.statut, 400);
 
-  const clientRequest = await requete(baseUrl, "/pharmacies", {
-    method: "POST",
-    body: { adminId: "usr-alice", nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
+  const demandeClient = await requete(adresseDeBase, "/pharmacies", {
+    methode: "POST",
+    corps: { adminId: "usr-alice", nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
   });
-  assert.equal(clientRequest.status, 403);
+  assert.equal(demandeClient.statut, 403);
 
-  const adminRequest = await requete(baseUrl, "/pharmacies", {
-    method: "POST",
-    body: { adminId: "usr-admin", nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
+  const demandeAdministrateur = await requete(adresseDeBase, "/pharmacies", {
+    methode: "POST",
+    corps: { adminId: "usr-admin", nom: "Nouvelle pharmacie", adresse: "1 rue du Test" },
   });
-  assert.equal(adminRequest.status, 201);
-  assert.equal(adminRequest.body.nom, "Nouvelle pharmacie");
+  assert.equal(demandeAdministrateur.statut, 201);
+  assert.equal(demandeAdministrateur.corps.nom, "Nouvelle pharmacie");
 });
 
 test("stock and reservations use a presentation and enforce user roles", async () => {
-  const baseUrl = await demarrerApp();
-  await requete(baseUrl, "/admin/seed", { method: "POST" });
+  const adresseDeBase = await demarrerApplication();
+  await requete(adresseDeBase, "/admin/seed", { methode: "POST" });
 
-  const wrongPharmacist = await requete(baseUrl, "/reservations/res-1/accepter", {
-    method: "POST",
-    body: { pharmacienId: "usr-ph-gare" },
+  const mauvaisPharmacien = await requete(adresseDeBase, "/reservations/res-1/accepter", {
+    methode: "POST",
+    corps: { pharmacienId: "usr-ph-gare" },
   });
-  assert.equal(wrongPharmacist.status, 403);
+  assert.equal(mauvaisPharmacien.statut, 403);
 
-  const accepted = await requete(baseUrl, "/reservations/res-1/accepter", {
-    method: "POST",
-    body: { pharmacienId: "usr-ph-centre" },
+  const acceptee = await requete(adresseDeBase, "/reservations/res-1/accepter", {
+    methode: "POST",
+    corps: { pharmacienId: "usr-ph-centre" },
   });
-  assert.equal(accepted.status, 200);
-  assert.equal(accepted.body.lignes[0].presentationId, "pre-doliprane500");
-  assert.equal("pharmacieId" in accepted.body, false);
+  assert.equal(acceptee.statut, 200);
+  assert.equal(acceptee.corps.lignes[0].presentationId, "pre-doliprane500");
+  assert.equal("pharmacieId" in acceptee.corps, false);
 
-  const wrongPharmacyList = await requete(
-    baseUrl,
+  const listeMauvaisePharmacie = await requete(
+    adresseDeBase,
     "/pharmacies/ph-centre/reservations?pharmacienId=usr-ph-gare",
   );
-  assert.equal(wrongPharmacyList.status, 403);
+  assert.equal(listeMauvaisePharmacie.statut, 403);
 
-  const pharmacyList = await requete(
-    baseUrl,
+  const listePharmacie = await requete(
+    adresseDeBase,
     "/pharmacies/ph-centre/reservations?pharmacienId=usr-ph-centre",
   );
-  assert.equal(pharmacyList.status, 200);
-  assert.ok(pharmacyList.body.some((reservation) => reservation.id === "res-1"));
+  assert.equal(listePharmacie.statut, 200);
+  assert.ok(listePharmacie.corps.some((reservation) => reservation.id === "res-1"));
 
-  const pharmacistReservation = await requete(baseUrl, "/reservations", {
-    method: "POST",
-    body: {
+  const reservationParPharmacien = await requete(adresseDeBase, "/reservations", {
+    methode: "POST",
+    corps: {
       clientId: "usr-ph-centre",
       pharmacieId: "ph-centre",
       lignes: [{ presentationId: "pre-spasfon", quantite: 1, unite: "unite" }],
     },
   });
-  assert.equal(pharmacistReservation.status, 403);
+  assert.equal(reservationParPharmacien.statut, 403);
 
-  const clientReservation = await requete(baseUrl, "/reservations", {
-    method: "POST",
-    body: {
+  const reservationClient = await requete(adresseDeBase, "/reservations", {
+    methode: "POST",
+    corps: {
       clientId: "usr-zoe",
       pharmacieId: "ph-centre",
       lignes: [{ presentationId: "pre-spasfon", quantite: 1, unite: "unite" }],
     },
   });
-  assert.equal(clientReservation.status, 201);
-  assert.equal(clientReservation.body.pharmacienId, "usr-ph-centre");
-  assert.equal(clientReservation.body.lignes[0].quantiteBase, 1);
+  assert.equal(reservationClient.statut, 201);
+  assert.equal(reservationClient.corps.pharmacienId, "usr-ph-centre");
+  assert.equal(reservationClient.corps.lignes[0].quantiteBase, 1);
 
-  const wrongOwner = await requete(baseUrl, `/reservations/${clientReservation.body.id}/annuler`, {
-    method: "POST",
-    body: { clientId: "usr-alice" },
+  const mauvaisProprietaire = await requete(adresseDeBase, `/reservations/${reservationClient.corps.id}/annuler`, {
+    methode: "POST",
+    corps: { clientId: "usr-alice" },
   });
-  assert.equal(wrongOwner.status, 403);
+  assert.equal(mauvaisProprietaire.statut, 403);
 
-  const cancelled = await requete(baseUrl, `/reservations/${clientReservation.body.id}/annuler`, {
-    method: "POST",
-    body: { clientId: "usr-zoe" },
+  const annulee = await requete(adresseDeBase, `/reservations/${reservationClient.corps.id}/annuler`, {
+    methode: "POST",
+    corps: { clientId: "usr-zoe" },
   });
-  assert.equal(cancelled.status, 200);
+  assert.equal(annulee.statut, 200);
 });
 
 test("medicament creation accepts description and presentations can receive stock", async () => {
-  const baseUrl = await demarrerApp();
-  await requete(baseUrl, "/admin/seed", { method: "POST" });
+  const adresseDeBase = await demarrerApplication();
+  await requete(adresseDeBase, "/admin/seed", { methode: "POST" });
 
-  const medicament = await requete(baseUrl, "/medicaments", {
-    method: "POST",
-    body: { nom: "Produit test", description: "Test" },
+  const medicament = await requete(adresseDeBase, "/medicaments", {
+    methode: "POST",
+    corps: { nom: "Produit test", description: "Test" },
   });
-  assert.equal(medicament.status, 201);
-  assert.equal(medicament.body.description, "Test");
-  assert.equal("forme" in medicament.body, false);
+  assert.equal(medicament.statut, 201);
+  assert.equal(medicament.corps.description, "Test");
+  assert.equal("forme" in medicament.corps, false);
 
-  const presentation = await requete(baseUrl, `/medicaments/${medicament.body.id}/presentations`, {
-    method: "POST",
-    body: {
+  const presentation = await requete(adresseDeBase, `/medicaments/${medicament.corps.id}/presentations`, {
+    methode: "POST",
+    corps: {
       forme: "comprimé",
       dosage: "250 mg",
       uniteBase: "comprime",
@@ -208,48 +208,48 @@ test("medicament creation accepts description and presentations can receive stoc
       prix: 250,
     },
   });
-  assert.equal(presentation.status, 201);
-  assert.equal(presentation.body.forme, "comprimé");
+  assert.equal(presentation.statut, 201);
+  assert.equal(presentation.corps.forme, "comprimé");
 
-  const stock = await requete(baseUrl, `/pharmacies/ph-centre/stocks/${presentation.body.id}`, {
-    method: "PUT",
-    body: { quantiteBase: 50, pharmacienId: "usr-ph-centre" },
+  const stock = await requete(adresseDeBase, `/pharmacies/ph-centre/stocks/${presentation.corps.id}`, {
+    methode: "PUT",
+    corps: { quantiteBase: 50, pharmacienId: "usr-ph-centre" },
   });
-  assert.equal(stock.status, 200);
-  assert.equal(stock.body.presentationId, presentation.body.id);
-  assert.equal(stock.body.disponible, 50);
+  assert.equal(stock.statut, 200);
+  assert.equal(stock.corps.presentationId, presentation.corps.id);
+  assert.equal(stock.corps.disponible, 50);
 
-  const unitSaleForbidden = await requete(baseUrl, "/reservations", {
-    method: "POST",
-    body: {
+  const venteUniteInterdite = await requete(adresseDeBase, "/reservations", {
+    methode: "POST",
+    corps: {
       clientId: "usr-zoe",
       pharmacieId: "ph-centre",
-      lignes: [{ presentationId: presentation.body.id, quantite: 1, unite: "unite" }],
+      lignes: [{ presentationId: presentation.corps.id, quantite: 1, unite: "unite" }],
     },
   });
-  assert.equal(unitSaleForbidden.status, 400);
+  assert.equal(venteUniteInterdite.statut, 400);
 
-  const multiLineReservation = await requete(baseUrl, "/reservations", {
-    method: "POST",
-    body: {
+  const reservationMultiLignes = await requete(adresseDeBase, "/reservations", {
+    methode: "POST",
+    corps: {
       clientId: "usr-zoe",
       pharmacieId: "ph-centre",
       lignes: [
-        { presentationId: presentation.body.id, quantite: 2, unite: "boite" },
+        { presentationId: presentation.corps.id, quantite: 2, unite: "boite" },
         { presentationId: "pre-spasfon", quantite: 1, unite: "unite" },
       ],
     },
   });
-  assert.equal(multiLineReservation.status, 201);
-  assert.ok(multiLineReservation.body.lignes.every((ligne) => !("id" in ligne)));
+  assert.equal(reservationMultiLignes.statut, 201);
+  assert.ok(reservationMultiLignes.corps.lignes.every((ligne) => !("id" in ligne)));
   assert.deepEqual(
-    multiLineReservation.body.lignes.map((ligne) => ligne.quantiteBase),
+    reservationMultiLignes.corps.lignes.map((ligne) => ligne.quantiteBase),
     [40, 1],
   );
 
-  const duplicatePresentation = await requete(baseUrl, "/reservations", {
-    method: "POST",
-    body: {
+  const presentationEnDouble = await requete(adresseDeBase, "/reservations", {
+    methode: "POST",
+    corps: {
       clientId: "usr-alice",
       pharmacieId: "ph-centre",
       lignes: [
@@ -258,35 +258,35 @@ test("medicament creation accepts description and presentations can receive stoc
       ],
     },
   });
-  assert.equal(duplicatePresentation.status, 400);
+  assert.equal(presentationEnDouble.statut, 400);
 
-  const forbiddenStockUpdate = await requete(
-    baseUrl,
-    `/pharmacies/ph-centre/stocks/${presentation.body.id}`,
-    { method: "PUT", body: { quantiteBase: 5, pharmacienId: "usr-ph-gare" } },
+  const modificationStockInterdite = await requete(
+    adresseDeBase,
+    `/pharmacies/ph-centre/stocks/${presentation.corps.id}`,
+    { methode: "PUT", corps: { quantiteBase: 5, pharmacienId: "usr-ph-gare" } },
   );
-  assert.equal(forbiddenStockUpdate.status, 403);
+  assert.equal(modificationStockInterdite.statut, 403);
 });
 
 test("an accepted reservation expires and releases stock", async () => {
-  const baseUrl = await demarrerApp();
-  await requete(baseUrl, "/admin/seed", { method: "POST" });
-  await requete(baseUrl, "/admin/horloge", {
-    method: "POST",
-    body: { avancerHeures: 25 },
+  const adresseDeBase = await demarrerApplication();
+  await requete(adresseDeBase, "/admin/seed", { methode: "POST" });
+  await requete(adresseDeBase, "/admin/horloge", {
+    methode: "POST",
+    corps: { avancerHeures: 25 },
   });
 
-  const expired = await requete(baseUrl, "/reservations/res-6/retirer", {
-    method: "POST",
-    body: { pharmacienId: "usr-ph-croix" },
+  const expiree = await requete(adresseDeBase, "/reservations/res-6/retirer", {
+    methode: "POST",
+    corps: { pharmacienId: "usr-ph-croix" },
   });
-  assert.equal(expired.status, 410);
-  assert.equal(expired.body.erreur.type, "ReservationExpireeError");
+  assert.equal(expiree.statut, 410);
+  assert.equal(expiree.corps.erreur.type, "ReservationExpireeError");
 
-  const stock = await requete(baseUrl, "/pharmacies/ph-croix/stocks/pre-smecta", {
-    method: "PUT",
-    body: { quantiteBase: 2, pharmacienId: "usr-ph-croix" },
+  const stock = await requete(adresseDeBase, "/pharmacies/ph-croix/stocks/pre-smecta", {
+    methode: "PUT",
+    corps: { quantiteBase: 2, pharmacienId: "usr-ph-croix" },
   });
-  assert.equal(stock.status, 200);
-  assert.equal(stock.body.quantiteReserveeBase, 0);
+  assert.equal(stock.statut, 200);
+  assert.equal(stock.corps.quantiteReserveeBase, 0);
 });

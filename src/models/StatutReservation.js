@@ -7,15 +7,15 @@ export const StatutReservation = Object.freeze({
   RETIREE: "retiree",       
 });
 
-const S = StatutReservation;
+const { EN_ATTENTE, ACCEPTEE, REFUSEE, ANNULEE, EXPIREE, RETIREE } = StatutReservation;
 
 export const TRANSITIONS_AUTORISEES = Object.freeze({
-  [S.EN_ATTENTE]: [S.ACCEPTEE, S.REFUSEE, S.ANNULEE, S.EXPIREE],
-  [S.ACCEPTEE]: [S.RETIREE, S.ANNULEE, S.EXPIREE],
-  [S.REFUSEE]: [],
-  [S.ANNULEE]: [],
-  [S.EXPIREE]: [],
-  [S.RETIREE]: [],
+  [EN_ATTENTE]: [ACCEPTEE, REFUSEE, ANNULEE, EXPIREE],
+  [ACCEPTEE]: [RETIREE, ANNULEE, EXPIREE],
+  [REFUSEE]: [],
+  [ANNULEE]: [],
+  [EXPIREE]: [],
+  [RETIREE]: [],
 });
 
-export const STATUTS_ACTIFS = Object.freeze([S.EN_ATTENTE, S.ACCEPTEE]);
+export const STATUTS_ACTIFS = Object.freeze([EN_ATTENTE, ACCEPTEE]);

@@ -4,8 +4,8 @@ import { exigerObjet } from "./entrees.js";
 import { vueReservation } from "../views/json.js";
 
 export class ReservationController {
-  constructor(reservationService) {
-    this.service = reservationService;
+  constructor(serviceReservation) {
+    this.service = serviceReservation;
   }
 
   #vue(reservation) {
@@ -13,15 +13,15 @@ export class ReservationController {
   }
 
   demander(corps) {
-    const b = exigerObjet(corps);
-    return this.#vue(this.service.demander(b.clientId, b.pharmacieId, b.lignes));
+    const donnees = exigerObjet(corps);
+    return this.#vue(this.service.demander(donnees.clientId, donnees.pharmacieId, donnees.lignes));
   }
 
   consulter(id, utilisateurId) { return this.#vue(this.service.consulter(id, utilisateurId)); }
   accepter(id, corps) { return this.#vue(this.service.accepter(id, exigerObjet(corps).pharmacienId)); }
   refuser(id, corps) {
-    const b = exigerObjet(corps);
-    return this.#vue(this.service.refuser(id, b.pharmacienId, b.motifRefus ?? ""));
+    const donnees = exigerObjet(corps);
+    return this.#vue(this.service.refuser(id, donnees.pharmacienId, donnees.motifRefus ?? ""));
   }
   annuler(id, corps) { return this.#vue(this.service.annuler(id, exigerObjet(corps).clientId)); }
   retirer(id, corps) { return this.#vue(this.service.marquerRetiree(id, exigerObjet(corps).pharmacienId)); }

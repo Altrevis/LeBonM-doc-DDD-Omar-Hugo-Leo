@@ -2,8 +2,8 @@ import { AccesInterditError, DemandeInvalideError } from "../errors.js";
 import { RoleEnum } from "../enums/RoleEnum.js";
 import { Stock } from "../models/Stock.js";
 
-const normaliser = (s) =>
-  String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+const normaliser = (texte) =>
+  String(texte).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 export class StockService {
   constructor(stocks, presentations, medicaments, pharmacies, utilisateurs) {

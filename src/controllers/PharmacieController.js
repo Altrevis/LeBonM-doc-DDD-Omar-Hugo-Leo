@@ -6,59 +6,59 @@ import { Presentation } from "../models/Presentation.js";
 import { exigerObjet } from "./entrees.js";
 
 export class PharmacieController {
-  constructor(pharmacies, medicaments, presentations, stockService, utilisateurs) {
+  constructor(pharmacies, medicaments, presentations, serviceStock, utilisateurs) {
     this.pharmacies = pharmacies;
     this.medicaments = medicaments;
     this.presentations = presentations;
-    this.stockService = stockService;
+    this.serviceStock = serviceStock;
     this.utilisateurs = utilisateurs;
   }
 
   creerPharmacie(corps) {
-    const b = exigerObjet(corps);
-    if (!b.adminId) throw new DemandeInvalideError("Administrateur manquant.");
-    const admin = this.utilisateurs.trouver(b.adminId);
-    if (admin.role !== RoleEnum.ADMIN) {
+    const donnees = exigerObjet(corps);
+    if (!donnees.adminId) throw new DemandeInvalideError("Administrateur manquant.");
+    const administrateur = this.utilisateurs.trouver(donnees.adminId);
+    if (administrateur.role !== RoleEnum.ADMIN) {
       throw new AccesInterditError("Seul un administrateur peut créer une pharmacie.");
     }
-    if (b.partenaire !== undefined && typeof b.partenaire !== "boolean") {
+    if (donnees.partenaire !== undefined && typeof donnees.partenaire !== "boolean") {
       throw new DemandeInvalideError("partenaire doit être un booléen.");
     }
     return this.pharmacies.ajouter(new Pharmacie({
-      id: this.pharmacies.prochainId(), nom: b.nom, adresse: b.adresse, partenaire: b.partenaire ?? true }));
+      id: this.pharmacies.prochainId(), nom: donnees.nom, adresse: donnees.adresse, partenaire: donnees.partenaire ?? true }));
   }
 
   creerMedicament(corps) {
-    const b = exigerObjet(corps);
+    const donnees = exigerObjet(corps);
     return this.medicaments.ajouter(new Medicament({
       id: this.medicaments.prochainId(),
-      nom: b.nom,
-      description: b.description,
-      ordonnanceRequise: b.ordonnanceRequise === true,
+      nom: donnees.nom,
+      description: donnees.description,
+      ordonnanceRequise: donnees.ordonnanceRequise === true,
     }));
   }
 
   creerPresentation(medicamentId, corps) {
     const medicament = this.medicaments.trouver(medicamentId);
-    const b = exigerObjet(corps);
+    const donnees = exigerObjet(corps);
     return this.presentations.ajouter(new Presentation({
       id: this.presentations.prochainId(),
       medicamentId: medicament.id,
-      forme: b.forme,
-      dosage: b.dosage,
-      uniteBase: b.uniteBase,
-      contenanceBoite: b.contenanceBoite,
-      venteALunite: b.venteALunite,
-      prix: b.prix,
+      forme: donnees.forme,
+      dosage: donnees.dosage,
+      uniteBase: donnees.uniteBase,
+      contenanceBoite: donnees.contenanceBoite,
+      venteALunite: donnees.venteALunite,
+      prix: donnees.prix,
     }));
   }
 
   definirStock(pharmacieId, presentationId, corps) {
-    const b = exigerObjet(corps);
-    return this.stockService.definirStock(pharmacieId, presentationId, b.quantiteBase, b.pharmacienId);
+    const donnees = exigerObjet(corps);
+    return this.serviceStock.definirStock(pharmacieId, presentationId, donnees.quantiteBase, donnees.pharmacienId);
   }
 
   rechercher(nomMedicament) {
-    return this.stockService.rechercherDisponibilites(nomMedicament);
+    return this.serviceStock.rechercherDisponibilites(nomMedicament);
   }
 }

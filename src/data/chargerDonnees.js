@@ -5,42 +5,45 @@ import { Utilisateur } from "../models/Utilisateur.js";
 import { RoleEnum } from "../enums/RoleEnum.js";
 
 export function chargerDonnees({
-  pharmacies, medicaments, presentations, utilisateurs, stockService, reservationService,
+  pharmacies, medicaments, presentations, utilisateurs, serviceStock, serviceReservation,
 }, donnees) {
-  for (const p of donnees.pharmacies) pharmacies.ajouter(new Pharmacie(p));
-  for (const m of donnees.medicaments) medicaments.ajouter(new Medicament(m));
-  for (const u of donnees.utilisateurs) {
-    if (u.role === RoleEnum.PHARMACIEN) pharmacies.trouver(u.pharmacieId);
-    utilisateurs.ajouter(new Utilisateur(u));
+  for (const pharmacie of donnees.pharmacies) pharmacies.ajouter(new Pharmacie(pharmacie));
+  for (const medicament of donnees.medicaments) medicaments.ajouter(new Medicament(medicament));
+  for (const utilisateur of donnees.utilisateurs) {
+    if (utilisateur.role === RoleEnum.PHARMACIEN) pharmacies.trouver(utilisateur.pharmacieId);
+    utilisateurs.ajouter(new Utilisateur(utilisateur));
   }
-  for (const p of donnees.presentations) {
-    medicaments.trouver(p.medicamentId);
-    presentations.ajouter(new Presentation(p));
+  for (const presentation of donnees.presentations) {
+    medicaments.trouver(presentation.medicamentId);
+    presentations.ajouter(new Presentation(presentation));
   }
-  for (const s of donnees.stocks) {
-    const pharmacien = utilisateurs.lister().find((u) =>
-      u.role === RoleEnum.PHARMACIEN && u.pharmacieId === s.pharmacieId);
+  for (const stock of donnees.stocks) {
+    const pharmacien = utilisateurs.lister().find((utilisateur) =>
+      utilisateur.role === RoleEnum.PHARMACIEN && utilisateur.pharmacieId === stock.pharmacieId);
     if (!pharmacien) {
-      throw new Error(`Aucun pharmacien affecté à la pharmacie ${s.pharmacieId} dans le jeu de données.`);
+      throw new Error(`Aucun pharmacien affecté à la pharmacie ${stock.pharmacieId} dans le jeu de données.`);
     }
-    stockService.definirStock(s.pharmacieId, s.presentationId, s.quantiteBase, pharmacien.id);
+    serviceStock.definirStock(stock.pharmacieId, stock.presentationId, stock.quantiteBase, pharmacien.id);
   }
 
   const creees = {};
-  for (const r of donnees.reservations) {
-    const res = reservationService.demander(r.clientId, r.pharmacieId, r.lignes);
-    switch (r.etat) {
+  for (const donneesReservation of donnees.reservations) {
+    const reservation = serviceReservation.demander(
+      donneesReservation.clientId, donneesReservation.pharmacieId, donneesReservation.lignes);
+    switch (donneesReservation.etat) {
       case "en_attente": break;
-      case "acceptee": reservationService.accepter(res.id, res.pharmacienId); break;
-      case "refusee": reservationService.refuser(res.id, res.pharmacienId, r.motifRefus ?? ""); break;
-      case "annulee": reservationService.annuler(res.id, r.clientId); break;
-      case "retiree":
-        reservationService.accepter(res.id, res.pharmacienId);
-        reservationService.marquerRetiree(res.id, res.pharmacienId);
+      case "acceptee": serviceReservation.accepter(reservation.id, reservation.pharmacienId); break;
+      case "refusee":
+        serviceReservation.refuser(reservation.id, reservation.pharmacienId, donneesReservation.motifRefus ?? "");
         break;
-      default: throw new Error(`État de réservation inconnu dans le jeu de données : ${r.etat}`);
+      case "annulee": serviceReservation.annuler(reservation.id, donneesReservation.clientId); break;
+      case "retiree":
+        serviceReservation.accepter(reservation.id, reservation.pharmacienId);
+        serviceReservation.marquerRetiree(reservation.id, reservation.pharmacienId);
+        break;
+      default: throw new Error(`État de réservation inconnu dans le jeu de données : ${donneesReservation.etat}`);
     }
-    creees[r.cle] = res;
+    creees[donneesReservation.cle] = reservation;
   }
   return creees;
 }

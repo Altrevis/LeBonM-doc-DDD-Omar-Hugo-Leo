@@ -33,10 +33,10 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
-              "const b = pm.response.json();",
+              "const corps = pm.response.json();",
               "pm.test(\"6 pharmacies, 12 médicaments, 13 présentations, 15 utilisateurs, 10 réservations et 10 lignes\", () => {",
-              "pm.expect(b.pharmacies).to.eql(6); pm.expect(b.medicaments).to.eql(12); pm.expect(b.presentations).to.eql(13); pm.expect(b.utilisateurs).to.eql(15); pm.expect(b.reservations).to.eql(10); pm.expect(b.lignesReservation).to.eql(10); });",
-              "Object.entries(b.idsReservations).forEach(([k, id]) => pm.collectionVariables.set(k, id));",
+              "pm.expect(corps.pharmacies).to.eql(6); pm.expect(corps.medicaments).to.eql(12); pm.expect(corps.presentations).to.eql(13); pm.expect(corps.utilisateurs).to.eql(15); pm.expect(corps.reservations).to.eql(10); pm.expect(corps.lignesReservation).to.eql(10); });",
+              "Object.entries(corps.idsReservations).forEach(([cle, id]) => pm.collectionVariables.set(cle, id));",
               "pm.test(\"identifiants r1..r10 enregistrés\", () => pm.expect(pm.collectionVariables.get(\"r10\")).to.be.a(\"string\"));"
             ]
           }
@@ -77,16 +77,16 @@
             "exec": [
               "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
               "pm.test(\"3 résultat(s)\", () => pm.expect(pm.response.json().length).to.eql(3));",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.presentation.id === \"pre-doliprane500\");",
-              "pm.test(\"ph-centre / doliprane500 : 40 disponible(s)\", () => pm.expect(d && d.disponible).to.eql(40)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-centre\" && x.presentation.id === \"pre-doliprane1000\");",
-              "pm.test(\"ph-centre / doliprane1000 : 25 disponible(s)\", () => pm.expect(d && d.disponible).to.eql(25)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-croix\" && x.presentation.id === \"pre-doliprane1000\");",
-              "pm.test(\"ph-croix / doliprane1000 : 30 disponible(s)\", () => pm.expect(d && d.disponible).to.eql(30)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-gare\" && x.presentation.id === \"pre-doliprane500\");",
-              "pm.test(\"ph-gare / doliprane500 : absent des résultats\", () => pm.expect(d && d.disponible).to.eql(undefined)); }",
-              "{ const d = pm.response.json().find(x => x.pharmacie.id === \"ph-tetedor\" && x.presentation.id === \"pre-doliprane500\");",
-              "pm.test(\"ph-tetedor / doliprane500 : absent des résultats\", () => pm.expect(d && d.disponible).to.eql(undefined)); }"
+              "{ const disponibilite = pm.response.json().find(resultat => resultat.pharmacie.id === \"ph-centre\" && resultat.presentation.id === \"pre-doliprane500\");",
+              "pm.test(\"ph-centre / doliprane500 : 40 disponible(s)\", () => pm.expect(disponibilite && disponibilite.disponible).to.eql(40)); }",
+              "{ const disponibilite = pm.response.json().find(resultat => resultat.pharmacie.id === \"ph-centre\" && resultat.presentation.id === \"pre-doliprane1000\");",
+              "pm.test(\"ph-centre / doliprane1000 : 25 disponible(s)\", () => pm.expect(disponibilite && disponibilite.disponible).to.eql(25)); }",
+              "{ const disponibilite = pm.response.json().find(resultat => resultat.pharmacie.id === \"ph-croix\" && resultat.presentation.id === \"pre-doliprane1000\");",
+              "pm.test(\"ph-croix / doliprane1000 : 30 disponible(s)\", () => pm.expect(disponibilite && disponibilite.disponible).to.eql(30)); }",
+              "{ const disponibilite = pm.response.json().find(resultat => resultat.pharmacie.id === \"ph-gare\" && resultat.presentation.id === \"pre-doliprane500\");",
+              "pm.test(\"ph-gare / doliprane500 : absent des résultats\", () => pm.expect(disponibilite && disponibilite.disponible).to.eql(undefined)); }",
+              "{ const disponibilite = pm.response.json().find(resultat => resultat.pharmacie.id === \"ph-tetedor\" && resultat.presentation.id === \"pre-doliprane500\");",
+              "pm.test(\"ph-tetedor / doliprane500 : absent des résultats\", () => pm.expect(disponibilite && disponibilite.disponible).to.eql(undefined)); }"
             ]
           }
         }
@@ -464,7 +464,7 @@
               "  method: \"POST\",",
               "  header: { \"Content-Type\": \"application/json\" },",
               "  body: { mode: \"raw\", raw: JSON.stringify({ avancerHeures: 25 }) }",
-              "}, (err) => { if (err) throw err; });"
+              "}, (erreur) => { if (erreur) throw erreur; });"
             ]
           }
         },
